@@ -5,7 +5,7 @@ import numpy as np
 import random
 
 # --- CONFIGURACIÓN INICIAL ---
-st.set_page_config(page_title="Generador Geométrico Pro", layout="wide")
+st.set_page_config(page_title="Generador KUKI Pro", layout="wide")
 
 # --- PALETAS DE COLOR CURADAS (Armonía garantizada) ---
 PALETAS = {
