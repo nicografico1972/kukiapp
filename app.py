@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="Generador de Patrones Ricos", layout="centered")
+st.set_page_config(page_title="KUKIAPP, layout="centered")
 
 st.title("KUKIAPP")
 st.write("CREA PATRONES CON KUKIESTILO")
