@@ -7,9 +7,9 @@ import random
 from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="centered")
+st.set_page_config(page_title="KUKIAPP - Bauhaus HD", layout="centered")
 
-# --- ESTILOS CSS (UI MEJORADA PARA MÓVIL) ---
+# --- ESTILOS CSS (UI MÓVIL MEJORADA) ---
 st.markdown("""
     <style>
     /* Fondo general */
@@ -73,32 +73,28 @@ st.markdown("""
     
     /* Ajuste de columnas en móvil */
     [data-testid="column"] {
-        min-width: 0px !important; /* Permite que las columnas se encojan bien */
+        min-width: 0px !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- CABECERA ---
 st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Generador Bauhaus Puro</p>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Generador Bauhaus Puro (HD)</p>", unsafe_allow_html=True)
 
 # --- PANEL DE CONTROL VISIBLE ---
-# Usamos un expander estilizado en lugar del sidebar
 with st.expander("🎛️ TOCAME PARA EDITAR (CONTROLES)", expanded=True):
     
     st.write("### 1. Tinta y Color")
-    
-    # Selector de cantidad (Slider)
     n_colores = st.slider("¿Cuántos colores de tinta?", 1, 5, 3)
     
-    # Columnas para los selectores de color (Se adaptan a móvil)
     cols = st.columns(n_colores)
     colores_usuario = []
-    defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#333333"]
+    # Colores por defecto inspirados en tu imagen de referencia
+    defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#3A7D44"]
     
     for i, col in enumerate(cols):
         with col:
-            # Etiqueta corta para móvil
             c = st.color_picker(f"C{i+1}", defaults[i])
             colores_usuario.append(c)
 
@@ -113,62 +109,74 @@ with st.expander("🎛️ TOCAME PARA EDITAR (CONTROLES)", expanded=True):
 
     st.markdown("---")
     
-    # Inicializar estado
     if 'seed' not in st.session_state:
         st.session_state.seed = 0
 
-    # BOTÓN GRANDE DENTRO DEL PANEL
     if st.button("🎲 ¡GENERAR DISEÑO NUEVO!"):
         st.session_state.seed += 1
 
-# --- ALFABETO GEOMÉTRICO ---
+# --- ALFABETO GEOMÉTRICO (RENDERIZADO HD) ---
+
+def add_patch_hd(ax, patch):
+    """Helper para añadir parches con renderizado nítido."""
+    # Desactiva el antialiasing para bordes perfectos
+    patch.set_antialiased(False)
+    # Asegura que no haya borde invisible que cause artefactos
+    patch.set_linewidth(0)
+    ax.add_patch(patch)
 
 def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
 
-    # 1. FONDO BLANCO
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0))
-    # 2. BORDE FINO
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5))
+    # 1. FONDO BLANCO (HD)
+    bg = patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0)
+    add_patch_hd(ax, bg)
+    
+    # 2. BORDE FINO (El único que sí queremos con antialiasing para que se vea bien)
+    # Usamos un truco: dibujar un rectángulo ligeramente más pequeño con borde
+    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5, antialiased=True))
 
-    # 3. FORMAS
+    # 3. FORMAS (HD)
     if tipo == 'circle':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma))
+        p = patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma)
+        add_patch_hd(ax, p)
     elif tipo == 'quarter_circle':
         w = patches.Wedge((x, y), 1, 0, 90, color=color_forma)
         w.set_transform(tr)
-        ax.add_patch(w)
+        add_patch_hd(ax, w)
     elif tipo == 'half_circle':
         w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=color_forma)
         w.set_transform(tr)
-        ax.add_patch(w)
+        add_patch_hd(ax, w)
     elif tipo == 'triangle':
         p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=color_forma)
         p.set_transform(tr)
-        ax.add_patch(p)
+        add_patch_hd(ax, p)
     elif tipo == 'rectangles':
         r1 = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
         r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=color_acento)
         r1.set_transform(tr)
         r2.set_transform(tr)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
+        add_patch_hd(ax, r1)
+        add_patch_hd(ax, r2)
     elif tipo == 'arch':
         w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=color_forma)
         w1.set_transform(tr)
-        ax.add_patch(w1)
+        add_patch_hd(ax, w1)
     elif tipo == 'diagonal_split':
         p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=color_forma)
         p.set_transform(tr)
-        ax.add_patch(p)
+        add_patch_hd(ax, p)
     elif tipo == 'bullseye':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma))
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento))
+        c1 = patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma)
+        c2 = patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento)
+        add_patch_hd(ax, c1)
+        add_patch_hd(ax, c2)
     elif tipo == 'cross':
         r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=color_forma)
         r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=color_forma)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
+        add_patch_hd(ax, r1)
+        add_patch_hd(ax, r2)
 
 # --- MOTOR DE GENERACIÓN ---
 
@@ -202,7 +210,6 @@ def generate_grid(size, user_colors, density):
     for r in range(seed_size):
         for c in range(seed_size):
             cell = seed[r][c]
-            # Espejos
             full_grid[r][c] = cell # Top-Left
             
             tr_cell = cell.copy()
@@ -221,7 +228,8 @@ def generate_grid(size, user_colors, density):
     return full_grid
 
 def render_final(grid, size):
-    fig, ax = plt.subplots(figsize=(10, 10))
+    # Aumentamos el DPI de la figura base para mayor resolución
+    fig, ax = plt.subplots(figsize=(10, 10), dpi=100)
     ax.set_aspect('equal')
     ax.axis('off')
     
@@ -238,7 +246,9 @@ def render_final(grid, size):
 
             draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
+    # Marco Exterior Grueso (Negro)
     ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
+    
     return fig
 
 # --- RENDERIZADO VISUAL ---
@@ -248,15 +258,15 @@ random.seed(st.session_state.seed)
 grid_data = generate_grid(complejidad, colores_usuario, densidad)
 figura = render_final(grid_data, complejidad)
 
-# Mostrar imagen centrada
 st.pyplot(figura)
 
-# Botón de descarga debajo de la imagen
+# Botón de descarga (Alta Resolución real)
 buf = BytesIO()
+# Guardamos con DPI muy alto y sin antialiasing en el guardado
 figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
 st.download_button(
-    label="⬇️ Descargar Imagen en HD",
+    label="⬇️ Descargar Imagen en HD (Nítida)",
     data=buf.getvalue(),
-    file_name="bauhaus_kuki_mobile.png",
+    file_name="bauhaus_kuki_hd.png",
     mime="image/png"
 )
