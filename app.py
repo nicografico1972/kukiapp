@@ -4,92 +4,148 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import numpy as np
 import random
+from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="wide")
+st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="centered")
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS (UI MEJORADA PARA MÓVIL) ---
 st.markdown("""
     <style>
+    /* Fondo general */
     .main { background-color: #ffffff; }
-    h1 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700; color: #111; }
+    
+    /* Títulos */
+    h1 { 
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+        font-weight: 800; 
+        color: #111; 
+        text-align: center;
+        margin-bottom: 0px;
+    }
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    /* ESTILO DEL PANEL DE CONTROL (EXPANDER) */
+    .streamlit-expanderHeader {
+        background-color: #f0f2f6;
+        border: 2px solid #111;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 18px;
+        color: #111;
+    }
+    .streamlit-expanderContent {
+        border: 2px solid #111;
+        border-top: none;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        background-color: #ffffff;
+        padding: 20px;
+    }
+
+    /* BOTONES */
     div.stButton > button { 
-        width: 100%; border: 2px solid #111; font-weight: bold; background-color: #fff; color: #111; 
-        transition: all 0.3s;
+        width: 100%; 
+        border: 3px solid #111; 
+        border-radius: 8px;
+        font-weight: 800; 
+        font-size: 16px;
+        background-color: #fff; 
+        color: #111; 
+        padding: 15px 0px; /* Más alto para dedos en móvil */
+        transition: all 0.2s;
+        box-shadow: 4px 4px 0px #111; /* Sombra dura estilo Bauhaus */
     }
     div.stButton > button:hover {
-        background-color: #111; color: #fff;
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px #111;
+    }
+    div.stButton > button:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0px #111;
+        background-color: #f0f0f0;
+    }
+    
+    /* Ajuste de columnas en móvil */
+    [data-testid="column"] {
+        min-width: 0px !important; /* Permite que las columnas se encojan bien */
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- CABECERA ---
-st.title("BAUHANICO")
-st.markdown("### *PATRONES BAUHAUS PARA NOSTÁLGICOS*")
+st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Generador Bauhaus Puro</p>", unsafe_allow_html=True)
 
-# --- BARRA LATERAL: CONFIGURACIÓN ---
-st.sidebar.header("Configuración de Tinta")
+# --- PANEL DE CONTROL VISIBLE ---
+# Usamos un expander estilizado en lugar del sidebar
+with st.expander("🎛️ TOCAME PARA EDITAR (CONTROLES)", expanded=True):
+    
+    st.write("### 1. Tinta y Color")
+    
+    # Selector de cantidad (Slider)
+    n_colores = st.slider("¿Cuántos colores de tinta?", 1, 5, 3)
+    
+    # Columnas para los selectores de color (Se adaptan a móvil)
+    cols = st.columns(n_colores)
+    colores_usuario = []
+    defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#333333"]
+    
+    for i, col in enumerate(cols):
+        with col:
+            # Etiqueta corta para móvil
+            c = st.color_picker(f"C{i+1}", defaults[i])
+            colores_usuario.append(c)
 
-# 1. Selector de Cantidad de Colores
-n_colores = st.sidebar.slider("¿Cuántos colores quieres usar?", 1, 5, 3)
+    st.markdown("---")
+    st.write("### 2. Geometría")
+    
+    c_geo1, c_geo2 = st.columns(2)
+    with c_geo1:
+        complejidad = st.select_slider("Complejidad", options=[2, 4, 6, 8, 12], value=4)
+    with c_geo2:
+        densidad = st.slider("Densidad", 0.1, 1.0, 0.9)
 
-# 2. Selectores de Color Dinámicos
-st.sidebar.markdown("---")
-st.sidebar.write(f"Elige tus {n_colores} colores:")
+    st.markdown("---")
+    
+    # Inicializar estado
+    if 'seed' not in st.session_state:
+        st.session_state.seed = 0
 
-colores_usuario = []
-defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#333333"] # Negro, Rojo, Azul, Amarillo, Gris
+    # BOTÓN GRANDE DENTRO DEL PANEL
+    if st.button("🎲 ¡GENERAR DISEÑO NUEVO!"):
+        st.session_state.seed += 1
 
-for i in range(n_colores):
-    c = st.sidebar.color_picker(f"Color {i+1}", defaults[i])
-    colores_usuario.append(c)
-
-st.sidebar.markdown("---")
-st.sidebar.header("⚙️ Geometría")
-complejidad = st.sidebar.select_slider("Complejidad (Grid)", options=[2, 4, 6, 8, 12], value=4)
-densidad = st.sidebar.slider("Densidad de Formas", 0.1, 1.0, 0.9)
-
-if 'seed' not in st.session_state:
-    st.session_state.seed = 0
-
-if st.sidebar.button("🎲 GENERAR NUEVO DISEÑO"):
-    st.session_state.seed += 1
-
-# --- ALFABETO GEOMÉTRICO (Actualizado para Fondo Blanco) ---
+# --- ALFABETO GEOMÉTRICO ---
 
 def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
-    """
-    Dibuja una baldosa sobre fondo blanco.
-    """
-    # Transformación para rotación centrada
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
 
-    # 1. FONDO SIEMPRE BLANCO
+    # 1. FONDO BLANCO
     ax.add_patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0))
-    
-    # 2. BORDE FINO (El marco de la baldosa)
-    # Dibujamos un rectángulo sin relleno (fill=False) con borde negro fino
+    # 2. BORDE FINO
     ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5))
 
-    # 3. FORMAS (Usando los colores elegidos)
+    # 3. FORMAS
     if tipo == 'circle':
         ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma))
-
     elif tipo == 'quarter_circle':
         w = patches.Wedge((x, y), 1, 0, 90, color=color_forma)
         w.set_transform(tr)
         ax.add_patch(w)
-
     elif tipo == 'half_circle':
         w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=color_forma)
         w.set_transform(tr)
         ax.add_patch(w)
-
     elif tipo == 'triangle':
         p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=color_forma)
         p.set_transform(tr)
         ax.add_patch(p)
-
     elif tipo == 'rectangles':
         r1 = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
         r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=color_acento)
@@ -97,21 +153,17 @@ def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
         r2.set_transform(tr)
         ax.add_patch(r1)
         ax.add_patch(r2)
-        
     elif tipo == 'arch':
         w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=color_forma)
         w1.set_transform(tr)
         ax.add_patch(w1)
-
     elif tipo == 'diagonal_split':
         p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=color_forma)
         p.set_transform(tr)
         ax.add_patch(p)
-        
     elif tipo == 'bullseye':
         ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma))
         ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento))
-        
     elif tipo == 'cross':
         r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=color_forma)
         r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=color_forma)
@@ -125,60 +177,46 @@ def generate_grid(size, user_colors, density):
     tile_types = ['circle', 'quarter_circle', 'half_circle', 'triangle', 
                   'rectangles', 'arch', 'diagonal_split', 'bullseye', 'cross', 'solid']
     
-    # 1. Generar Semilla
     seed = []
     for _ in range(seed_size):
         row = []
         for _ in range(seed_size):
             if random.random() > density:
                 tipo = 'solid'
-                c_main = '#FFFFFF' # Transparente/Blanco
+                c_main = '#FFFFFF'
                 c_acc = '#FFFFFF'
             else:
                 tipo = random.choice(tile_types)
-                # Elegir colores de la lista del usuario
-                # Esto asegura que SIEMPRE se usen tus colores para las formas
                 c_main = random.choice(user_colors)
-                # Para el acento, intentamos coger uno distinto si hay más de 1 color
                 if len(user_colors) > 1:
                     avail = [c for c in user_colors if c != c_main]
-                    if avail:
-                        c_acc = random.choice(avail)
-                    else:
-                        c_acc = c_main
+                    c_acc = random.choice(avail) if avail else c_main
                 else:
                     c_acc = c_main
 
             rot = random.randint(0, 3)
-            
             row.append({'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc})
         seed.append(row)
 
-    # 2. Reflejos (Mirroring) para crear la composición completa
     full_grid = [[None for _ in range(size)] for _ in range(size)]
-    
     for r in range(seed_size):
         for c in range(seed_size):
             cell = seed[r][c]
+            # Espejos
+            full_grid[r][c] = cell # Top-Left
             
-            # Top-Left
-            full_grid[r][c] = cell
-            
-            # Top-Right (Mirror X)
             tr_cell = cell.copy()
             tr_cell['mirror_x'] = True 
-            full_grid[r][size - 1 - c] = tr_cell
+            full_grid[r][size - 1 - c] = tr_cell # Top-Right
             
-            # Bottom-Left (Mirror Y)
             bl_cell = cell.copy()
             bl_cell['mirror_y'] = True
-            full_grid[size - 1 - r][c] = bl_cell
+            full_grid[size - 1 - r][c] = bl_cell # Bot-Left
             
-            # Bottom-Right (Double Mirror)
             br_cell = cell.copy()
             br_cell['mirror_x'] = True
             br_cell['mirror_y'] = True
-            full_grid[size - 1 - r][size - 1 - c] = br_cell
+            full_grid[size - 1 - r][size - 1 - c] = br_cell # Bot-Right
             
     return full_grid
 
@@ -187,58 +225,38 @@ def render_final(grid, size):
     ax.set_aspect('equal')
     ax.axis('off')
     
-    # Dibujar baldosas
     for r in range(size):
         for c in range(size):
             cell = grid[r][c]
-            
-            x = c
-            y = size - 1 - r
-            
+            x, y = c, size - 1 - r
             rot = cell['rot']
             
-            # Ajuste de rotación para espejos
             if cell.get('mirror_x'):
-                if rot == 0: rot = 1
-                elif rot == 1: rot = 0
-                elif rot == 2: rot = 3
-                elif rot == 3: rot = 2
-                
+                rot = {0:1, 1:0, 2:3, 3:2}[rot]
             if cell.get('mirror_y'):
-                if rot == 0: rot = 3
-                elif rot == 1: rot = 2
-                elif rot == 2: rot = 1
-                elif rot == 3: rot = 0
+                rot = {0:3, 1:2, 2:1, 3:0}[rot]
 
             draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    # Marco Exterior Grueso (Negro)
     ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
-    
     return fig
 
-# --- EJECUCIÓN ---
+# --- RENDERIZADO VISUAL ---
 
 random.seed(st.session_state.seed)
 
 grid_data = generate_grid(complejidad, colores_usuario, densidad)
 figura = render_final(grid_data, complejidad)
 
-col_img, col_info = st.columns([3, 1])
+# Mostrar imagen centrada
+st.pyplot(figura)
 
-with col_img:
-    st.pyplot(figura)
-
-with col_info:
-    st.markdown("### Tu Diseño")
-    st.info(f"Colores: {len(colores_usuario)}")
-    
-    from io import BytesIO
-    buf = BytesIO()
-    figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
-    st.download_button(
-        label="⬇️ Descargar",
-        data=buf.getvalue(),
-        file_name="bauhaus_kuki_final.png",
-        mime="image/png"
-    )
+# Botón de descarga debajo de la imagen
+buf = BytesIO()
+figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
+st.download_button(
+    label="⬇️ Descargar Imagen en HD",
+    data=buf.getvalue(),
+    file_name="bauhaus_kuki_mobile.png",
+    mime="image/png"
+)
