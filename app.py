@@ -5,7 +5,7 @@ import io
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
-    page_title="Generador de Mosaicos Geométricos",
+    page_title="Patrones Pro Studio",
     page_icon="🎨",
     layout="wide"
 )
@@ -14,7 +14,7 @@ st.set_page_config(
 class PatternGenerator:
     def __init__(self, size=800):
         self.size = size
-        # Paleta de colores inspirada en la imagen de referencia (Bauhaus / Retro)
+        # Paleta de colores inspirada en la imagen de referencia
         self.base_palette = [
             "#E63946",  # Rojo vivo
             "#F1FAEE",  # Blanco crema
@@ -35,7 +35,6 @@ class PatternGenerator:
     def _draw_cell_pattern(self, draw, x, y, cell_size, colors, thickness, style_seed):
         """
         Dibuja un patrón geométrico dentro de una celda específica.
-        Se eligen formas abstractas basadas en la imagen de referencia.
         """
         random.seed(style_seed)
         
@@ -50,20 +49,23 @@ class PatternGenerator:
         # Tipos de patrones geométricos
         pattern_type = random.choice(['triangle_half', 'diamond', 'cross', 'concentric', 'stripes', 'corner_triangle'])
 
+        # Limitar el grosor para evitar errores gráficos en celdas pequeñas
+        safe_thickness = min(thickness, cell_size // 3)
+
         if pattern_type == 'triangle_half':
-            # Triángulo diagonal (mitad de la celda)
             points = [(x, y), (x + cell_size, y), (x, y + cell_size)]
             draw.polygon(points, fill=fg_color)
             
         elif pattern_type == 'corner_triangle':
-            # Triángulo pequeño en esquina
             offset = cell_size // 2
             points = [(x, y), (x + offset, y), (x, y + offset)]
             draw.polygon(points, fill=accent_color)
 
         elif pattern_type == 'diamond':
-            # Rombo central
-            margin = thickness // 2
+            margin = safe_thickness // 2
+            # Aseguramos que el margen no colapse la figura
+            if margin >= cell_size // 2: margin = (cell_size // 2) - 2
+            
             points = [
                 (x + cell_size // 2, y + margin),
                 (x + cell_size - margin, y + cell_size // 2),
@@ -71,146 +73,139 @@ class PatternGenerator:
                 (x + margin, y + cell_size // 2)
             ]
             draw.polygon(points, fill=fg_color)
-            # Centro opcional
+            
             if random.random() > 0.5:
                 inner_margin = cell_size // 3
-                draw.rectangle([x + inner_margin, y + inner_margin, x + cell_size - inner_margin, y + cell_size - inner_margin], fill=accent_color)
+                if inner_margin < cell_size // 2:
+                    draw.rectangle([x + inner_margin, y + inner_margin, x + cell_size - inner_margin, y + cell_size - inner_margin], fill=accent_color)
 
         elif pattern_type == 'cross':
-            # Cruz gruesa
-            w = thickness
+            w = safe_thickness
             cx, cy = x + cell_size // 2, y + cell_size // 2
-            # Horizontal
             draw.rectangle([x, cy - w//2, x + cell_size, cy + w//2], fill=fg_color)
-            # Vertical
             draw.rectangle([cx - w//2, y, cx + w//2, y + cell_size], fill=fg_color)
 
         elif pattern_type == 'concentric':
-            # Cuadrados concéntricos
             steps = 3
             step_size = cell_size // (steps * 2)
+            if step_size < 1: step_size = 1 # Evitar división por cero o pasos nulos
+
             for i in range(steps):
                 current_color = fg_color if i % 2 == 0 else accent_color
-                margin = i * step_size * (thickness / 20) # Ajuste por grosor
-                draw.rectangle(
-                    [x + margin, y + margin, x + cell_size - margin, y + cell_size - margin], 
-                    outline=current_color, 
-                    width=int(thickness/2)
-                )
+                
+                # --- CORRECCIÓN DEL ERROR ---
+                # Calculamos el margen deseado
+                raw_margin = i * step_size * (thickness / 20)
+                
+                # Forzamos que el margen NUNCA sea mayor que la mitad de la celda - 1 pixel
+                # Esto evita el ValueError "coordinate invalid"
+                max_allowed_margin = (cell_size // 2) - 2
+                margin = min(int(raw_margin), max_allowed_margin)
+                
+                if margin < 0: margin = 0 # Seguridad extra
+
+                # Solo dibujamos si hay espacio suficiente
+                if margin < max_allowed_margin:
+                    draw.rectangle(
+                        [x + margin, y + margin, x + cell_size - margin, y + cell_size - margin], 
+                        outline=current_color, 
+                        width=max(1, int(safe_thickness/2))
+                    )
 
         elif pattern_type == 'stripes':
-            # Bandas diagonales
-            width_line = max(1, int(thickness / 2))
+            width_line = max(1, int(safe_thickness / 2))
             for i in range(0, cell_size * 2, width_line * 2):
-                draw.line([(x, y + i), (x + i, y)], fill=fg_color, width=width_line)
+                # Dibujar líneas diagonales excediendo los bordes para recortar después (técnica simple)
+                # Aquí usamos la técnica de líneas dentro de la caja
+                p1 = (x, y + i)
+                p2 = (x + i, y)
+                # Solo dibujar si los puntos están razonablemente cerca
+                draw.line([p1, p2], fill=fg_color, width=width_line)
 
     def generate(self, num_colors=4, thickness=20, grid_divisions=4, seed=42):
-        """
-        Genera el mosaico completo 800x800.
-        Estrategia: Generar el cuadrante superior izquierdo y reflejarlo (Simetría)
-        para lograr el efecto de azulejo coherente.
-        """
         image = Image.new("RGB", (self.size, self.size), "white")
         draw = ImageDraw.Draw(image)
         
         selected_colors = self._get_random_colors(num_colors, seed)
-        
-        # Tamaño de cada celda en la grilla
         cell_size = self.size // grid_divisions
-        
-        # Iteramos solo sobre la mitad de la grilla para crear simetría
-        # Si grid_divisions es impar, redondeamos hacia arriba para cubrir el centro
         half_grid = (grid_divisions + 1) // 2 
 
         for i in range(half_grid):
             for j in range(half_grid):
-                # Coordenadas base
                 x = i * cell_size
                 y = j * cell_size
-                
-                # Semilla única para esta posición para consistencia
                 cell_seed = seed + (i * 100) + j
                 
-                # Creamos una imagen temporal pequeña para la celda
                 cell_img = Image.new("RGB", (cell_size, cell_size))
                 cell_draw = ImageDraw.Draw(cell_img)
                 
-                # Dibujamos el patrón en la celda base (0,0 relativo)
                 self._draw_cell_pattern(cell_draw, 0, 0, cell_size, selected_colors, thickness, cell_seed)
                 
-                # --- APLICAR SIMETRÍA (Reflejar en los 4 cuadrantes) ---
+                # Simetría (Espejos)
+                image.paste(cell_img, (x, y)) # Top-Left
                 
-                # 1. Top-Left (Original)
-                image.paste(cell_img, (x, y))
-                
-                # 2. Top-Right (Espejo Horizontal)
                 tr_x = self.size - cell_size - x
-                image.paste(cell_img.transpose(Image.FLIP_LEFT_RIGHT), (tr_x, y))
+                image.paste(cell_img.transpose(Image.FLIP_LEFT_RIGHT), (tr_x, y)) # Top-Right
                 
-                # 3. Bottom-Left (Espejo Vertical)
                 bl_y = self.size - cell_size - y
-                image.paste(cell_img.transpose(Image.FLIP_TOP_BOTTOM), (x, bl_y))
+                image.paste(cell_img.transpose(Image.FLIP_TOP_BOTTOM), (x, bl_y)) # Bottom-Left
                 
-                # 4. Bottom-Right (Espejo Total)
-                image.paste(cell_img.transpose(Image.ROTATE_180), (tr_x, bl_y))
+                image.paste(cell_img.transpose(Image.ROTATE_180), (tr_x, bl_y)) # Bottom-Right
 
         return image
 
 # --- INTERFAZ STREAMLIT ---
 
-st.title("🧩 Generador de Mosaicos Geométricos")
+# Títulos personalizados solicitados
+st.title("Patrones Pro Studio")
+st.markdown("**by nico.bastida**")
+st.markdown("---")
+
 st.markdown("""
 Genera patrones abstractos estilo "azulejo" listos para usar. 
 Ajusta los parámetros en la barra lateral y crea composiciones únicas.
 """)
 
-# Barra Lateral de Controles
+# Barra Lateral
 with st.sidebar:
     st.header("Parámetros del Diseño")
     
     seed_val = st.number_input("Semilla (Seed)", value=42, help="Cambia este número para obtener un diseño completamente distinto.")
-    
     num_colors = st.slider("Número de Colores", min_value=2, max_value=8, value=4)
-    
-    thickness = st.slider("Grosor / Densidad", min_value=5, max_value=60, value=30, help="Controla el ancho de líneas y marcos.")
-    
-    complexity = st.select_slider("Complejidad de la Grilla", options=[2, 4, 6, 8, 10], value=4, help="Define en cuántas celdas se divide el lienzo.")
+    thickness = st.slider("Grosor / Densidad", min_value=5, max_value=60, value=30)
+    complexity = st.select_slider("Complejidad de la Grilla", options=[2, 4, 6, 8, 10], value=4)
     
     if st.button("🎲 Generar Nuevo Patrón Aleatorio"):
         seed_val = random.randint(0, 10000)
-        # Hack para actualizar el input number visualmente requiere rerun, 
-        # pero para simplicidad solo actualizamos la generación.
     
     st.info(f"Semilla actual: {seed_val}")
 
-# Lógica Principal
+# Generación
 generator = PatternGenerator(size=800)
 
-# Generar imagen
-img = generator.generate(
-    num_colors=num_colors, 
-    thickness=thickness, 
-    grid_divisions=complexity, 
-    seed=seed_val
-)
-
-# Columnas para centrar la imagen
-col1, col2, col3 = st.columns([1, 2, 1])
-
-with col2:
-    st.image(img, caption=f"Patrón Generado (Seed: {seed_val})", use_container_width=True)
-    
-    # Preparar descarga
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    byte_im = buf.getvalue()
-    
-    st.download_button(
-        label="⬇️ Descargar Patrón PNG (800x800)",
-        data=byte_im,
-        file_name=f"patron_geometrico_{seed_val}.png",
-        mime="image/png"
+try:
+    img = generator.generate(
+        num_colors=num_colors, 
+        thickness=thickness, 
+        grid_divisions=complexity, 
+        seed=seed_val
     )
 
-st.markdown("---")
-st.markdown("**Nota:** El algoritmo utiliza una grilla simétrica para asegurar que el patrón se sienta como un 'azulejo' completo y estético, similar a los patrones Bauhuas o hidráulicos.")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(img, caption=f"Patrón Generado (Seed: {seed_val})", use_container_width=True)
+        
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        byte_im = buf.getvalue()
+        
+        st.download_button(
+            label="⬇️ Descargar Patrón PNG",
+            data=byte_im,
+            file_name=f"patron_pro_{seed_val}.png",
+            mime="image/png"
+        )
+
+except Exception as e:
+    st.error(f"Ocurrió un error al generar el patrón: {e}")
+    st.warning("Prueba a reducir un poco el 'Grosor' o la 'Complejidad'.")
