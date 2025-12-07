@@ -6,32 +6,43 @@ import numpy as np
 import random
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="KUKIAPP - Bauhaus Edition", layout="wide")
+st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="wide")
 
 # --- ESTILOS CSS ---
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f6; }
-    h1 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700; }
-    div.stButton > button { width: 100%; border: 2px solid black; font-weight: bold; }
+    .main { background-color: #ffffff; }
+    h1 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700; color: #111; }
+    div.stButton > button { 
+        width: 100%; border: 2px solid #111; font-weight: bold; background-color: #fff; color: #111; 
+        transition: all 0.3s;
+    }
+    div.stButton > button:hover {
+        background-color: #111; color: #fff;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # --- CABECERA ---
-st.title("KUKIAPP")
-st.markdown("### *Generador de Patrones Bauhaus*")
+st.title("BAUHANICO")
+st.markdown("### *PATRONES BAUHAUS PARA NOSTÁLGICOS*")
 
-# --- BARRA LATERAL ---
-st.sidebar.header("🎨 Paleta de Color")
-st.sidebar.markdown("Selecciona 5 colores para tu composición.")
+# --- BARRA LATERAL: CONFIGURACIÓN ---
+st.sidebar.header("Configuración de Tinta")
 
-c1 = st.sidebar.color_picker("Fondo", "#F0F0F0")
-c2 = st.sidebar.color_picker("Principal", "#111111")
-c3 = st.sidebar.color_picker("Acento 1", "#D92B2B")
-c4 = st.sidebar.color_picker("Acento 2", "#2B5CD9")
-c5 = st.sidebar.color_picker("Acento 3", "#F2C84B")
+# 1. Selector de Cantidad de Colores
+n_colores = st.sidebar.slider("¿Cuántos colores quieres usar?", 1, 5, 3)
 
-PALETA_USUARIO = [c1, c2, c3, c4, c5]
+# 2. Selectores de Color Dinámicos
+st.sidebar.markdown("---")
+st.sidebar.write(f"Elige tus {n_colores} colores:")
+
+colores_usuario = []
+defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#333333"] # Negro, Rojo, Azul, Amarillo, Gris
+
+for i in range(n_colores):
+    c = st.sidebar.color_picker(f"Color {i+1}", defaults[i])
+    colores_usuario.append(c)
 
 st.sidebar.markdown("---")
 st.sidebar.header("⚙️ Geometría")
@@ -44,73 +55,72 @@ if 'seed' not in st.session_state:
 if st.sidebar.button("🎲 GENERAR NUEVO DISEÑO"):
     st.session_state.seed += 1
 
-# --- ALFABETO GEOMÉTRICO BAUHAUS (CORREGIDO) ---
+# --- ALFABETO GEOMÉTRICO (Actualizado para Fondo Blanco) ---
 
-def draw_bauhaus_tile(ax, x, y, tipo, rot, colors):
+def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
     """
-    Dibuja una baldosa estilo Bauhaus en (x,y).
-    Usa 'tipo' consistentemente para evitar errores.
+    Dibuja una baldosa sobre fondo blanco.
     """
-    bg = colors[0]
-    fg = colors[1]
-    acc = colors[2] if len(colors) > 2 else fg
-
     # Transformación para rotación centrada
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
 
-    # 1. Fondo
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, color=bg))
+    # 1. FONDO SIEMPRE BLANCO
+    ax.add_patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0))
+    
+    # 2. BORDE FINO (El marco de la baldosa)
+    # Dibujamos un rectángulo sin relleno (fill=False) con borde negro fino
+    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5))
 
-    # 2. Formas Puras
+    # 3. FORMAS (Usando los colores elegidos)
     if tipo == 'circle':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.4, color=fg))
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma))
 
     elif tipo == 'quarter_circle':
-        w = patches.Wedge((x, y), 1, 0, 90, color=fg)
+        w = patches.Wedge((x, y), 1, 0, 90, color=color_forma)
         w.set_transform(tr)
         ax.add_patch(w)
 
-    elif tipo == 'half_circle':  # <--- AQUÍ ESTABA EL ERROR, CORREGIDO A 'tipo'
-        w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=fg)
+    elif tipo == 'half_circle':
+        w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=color_forma)
         w.set_transform(tr)
         ax.add_patch(w)
 
     elif tipo == 'triangle':
-        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=fg)
+        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=color_forma)
         p.set_transform(tr)
         ax.add_patch(p)
 
     elif tipo == 'rectangles':
-        r1 = patches.Rectangle((x, y), 0.5, 1, color=fg)
-        r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=acc)
+        r1 = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
+        r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=color_acento)
         r1.set_transform(tr)
         r2.set_transform(tr)
         ax.add_patch(r1)
         ax.add_patch(r2)
         
     elif tipo == 'arch':
-        w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=fg)
+        w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=color_forma)
         w1.set_transform(tr)
         ax.add_patch(w1)
 
     elif tipo == 'diagonal_split':
-        p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=fg)
+        p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=color_forma)
         p.set_transform(tr)
         ax.add_patch(p)
         
     elif tipo == 'bullseye':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=fg))
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.25, color=acc))
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma))
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento))
         
     elif tipo == 'cross':
-        r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=fg)
-        r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=fg)
+        r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=color_forma)
+        r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=color_forma)
         ax.add_patch(r1)
         ax.add_patch(r2)
 
-# --- MOTOR DE SIMETRÍA ---
+# --- MOTOR DE GENERACIÓN ---
 
-def generate_harmonic_grid(size, palette, density):
+def generate_grid(size, user_colors, density):
     seed_size = size // 2
     tile_types = ['circle', 'quarter_circle', 'half_circle', 'triangle', 
                   'rectangles', 'arch', 'diagonal_split', 'bullseye', 'cross', 'solid']
@@ -122,23 +132,29 @@ def generate_harmonic_grid(size, palette, density):
         for _ in range(seed_size):
             if random.random() > density:
                 tipo = 'solid'
+                c_main = '#FFFFFF' # Transparente/Blanco
+                c_acc = '#FFFFFF'
             else:
                 tipo = random.choice(tile_types)
-                
+                # Elegir colores de la lista del usuario
+                # Esto asegura que SIEMPRE se usen tus colores para las formas
+                c_main = random.choice(user_colors)
+                # Para el acento, intentamos coger uno distinto si hay más de 1 color
+                if len(user_colors) > 1:
+                    avail = [c for c in user_colors if c != c_main]
+                    if avail:
+                        c_acc = random.choice(avail)
+                    else:
+                        c_acc = c_main
+                else:
+                    c_acc = c_main
+
             rot = random.randint(0, 3)
             
-            # Selección de colores inteligente
-            bg_idx = 0 
-            avail_colors = [c for i, c in enumerate(palette) if i != bg_idx]
-            if not avail_colors: avail_colors = [palette[0]] # Fallback
-            selected_cols = random.sample(avail_colors, k=min(2, len(avail_colors)))
-            
-            final_cols = [palette[bg_idx]] + selected_cols
-            
-            row.append({'type': tipo, 'rot': rot, 'cols': final_cols})
+            row.append({'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc})
         seed.append(row)
 
-    # 2. Reflejo (Mirroring)
+    # 2. Reflejos (Mirroring) para crear la composición completa
     full_grid = [[None for _ in range(size)] for _ in range(size)]
     
     for r in range(seed_size):
@@ -166,14 +182,12 @@ def generate_harmonic_grid(size, palette, density):
             
     return full_grid
 
-def render_bauhaus(grid, size):
+def render_final(grid, size):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_aspect('equal')
     ax.axis('off')
     
-    # Fondo global
-    # ax.add_patch(patches.Rectangle((0,0), size, size, color=PALETA_USUARIO[0]))
-
+    # Dibujar baldosas
     for r in range(size):
         for c in range(size):
             cell = grid[r][c]
@@ -196,10 +210,10 @@ def render_bauhaus(grid, size):
                 elif rot == 2: rot = 1
                 elif rot == 3: rot = 0
 
-            draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['cols'])
+            draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    # Marco
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=5)
+    # Marco Exterior Grueso (Negro)
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
     
     return fig
 
@@ -207,8 +221,8 @@ def render_bauhaus(grid, size):
 
 random.seed(st.session_state.seed)
 
-grid_data = generate_harmonic_grid(complejidad, PALETA_USUARIO, densidad)
-figura = render_bauhaus(grid_data, complejidad)
+grid_data = generate_grid(complejidad, colores_usuario, densidad)
+figura = render_final(grid_data, complejidad)
 
 col_img, col_info = st.columns([3, 1])
 
@@ -216,15 +230,15 @@ with col_img:
     st.pyplot(figura)
 
 with col_info:
-    st.markdown("### Detalles")
-    st.success("Diseño Generado")
+    st.markdown("### Tu Diseño")
+    st.info(f"Colores: {len(colores_usuario)}")
     
     from io import BytesIO
     buf = BytesIO()
-    figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#f0f2f6")
+    figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
     st.download_button(
-        label="⬇️ Descargar Arte",
+        label="⬇️ Descargar",
         data=buf.getvalue(),
-        file_name="bauhaus_kuki.png",
+        file_name="bauhaus_kuki_final.png",
         mime="image/png"
     )
