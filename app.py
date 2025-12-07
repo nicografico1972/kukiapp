@@ -23,6 +23,15 @@ st.markdown("""
         text-align: center;
         margin-bottom: 0px;
     }
+    /* Estilo para la firma */
+    .signature {
+        text-align: center;
+        color: #111;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
     .subtitle {
         text-align: center;
         color: #666;
@@ -78,8 +87,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CABECERA ---
+# --- CABECERA CON FIRMA ---
 st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
+st.markdown("<p class='signature'>by Nico.Bastida</p>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Generador Bauhaus Puro</p>", unsafe_allow_html=True)
 
 # --- PANEL DE CONTROL VISIBLE ---
@@ -251,12 +261,26 @@ figura = render_final(grid_data, complejidad)
 # Mostrar imagen centrada
 st.pyplot(figura)
 
-# Botón de descarga debajo de la imagen
-buf = BytesIO()
-figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
-st.download_button(
-    label="⬇️ Descargar Imagen en HD",
-    data=buf.getvalue(),
-    file_name="bauhaus_kuki_mobile.png",
-    mime="image/png"
-)
+# Botones de descarga debajo de la imagen
+col_d1, col_d2 = st.columns(2)
+
+with col_d1:
+    buf_png = BytesIO()
+    figura.savefig(buf_png, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
+    st.download_button(
+        label="⬇️ Descargar PNG (Imagen)",
+        data=buf_png.getvalue(),
+        file_name="bauhaus_kuki_mobile.png",
+        mime="image/png"
+    )
+
+with col_d2:
+    buf_svg = BytesIO()
+    # SVG es un formato vectorial, ideal para impresión de alta calidad
+    figura.savefig(buf_svg, format="svg", bbox_inches='tight', facecolor="#ffffff")
+    st.download_button(
+        label="⬇️ Descargar SVG (Vector)",
+        data=buf_svg.getvalue(),
+        file_name="bauhaus_kuki_mobile.svg",
+        mime="image/svg+xml"
+    )
