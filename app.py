@@ -7,8 +7,8 @@ import numpy as np
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Generador de Patrones Ricos", layout="centered")
 
-st.title("Generador de Patrones Ricos 🎨")
-st.write("Crea patrones complejos y vibrantes, inspirados en mosaicos y azulejos.")
+st.title("KUKIAPP")
+st.write("CREA PATRONES CON KUKIESTILO")
 
 # --- PALETA DE COLORES VIBRANTE ---
 PALETA_RICA = [
