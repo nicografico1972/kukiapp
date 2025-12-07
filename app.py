@@ -1,215 +1,262 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.transforms as transforms
+import numpy as np
 import random
-from PIL import Image, ImageDraw, ImageOps
-import io
+from io import BytesIO
 
-# --- CONFIGURACIÓN TÉCNICA ---
-st.set_page_config(
-    page_title="GENERADOR BAUHAUS",
-    layout="centered"
-)
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="centered")
 
-# --- ESTÉTICA BRUTALISTA (CSS) ---
+# --- ESTILOS CSS (UI MEJORADA PARA MÓVIL) ---
 st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
+    <style>
+    /* Fondo general */
+    .main { background-color: #ffffff; }
     
-    html, body, [class*="css"] {
-        font-family: 'Inter', Helvetica, Arial, sans-serif;
+    /* Títulos */
+    h1 { 
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+        font-weight: 800; 
+        color: #111; 
+        text-align: center;
+        margin-bottom: 0px;
     }
-    h1 {
-        font-weight: 900;
-        text-transform: uppercase;
-        font-size: 3.5em !important;
-        color: #000;
-        border-bottom: 6px solid #000;
-        letter-spacing: -2px;
-        padding-bottom: 20px;
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 20px;
     }
-    .stButton>button {
-        background-color: #000 !important;
-        color: #FFF !important;
-        font-weight: 900 !important;
-        text-transform: uppercase;
-        font-size: 1.5em !important;
-        border-radius: 0px !important;
-        border: 2px solid #000 !important;
-        padding: 1em 2em !important;
+
+    /* ESTILO DEL PANEL DE CONTROL (EXPANDER) */
+    .streamlit-expanderHeader {
+        background-color: #f0f2f6;
+        border: 2px solid #111;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 18px;
+        color: #111;
+    }
+    .streamlit-expanderContent {
+        border: 2px solid #111;
+        border-top: none;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        background-color: #ffffff;
+        padding: 20px;
+    }
+
+    /* BOTONES */
+    div.stButton > button { 
+        width: 100%; 
+        border: 3px solid #111; 
+        border-radius: 8px;
+        font-weight: 800; 
+        font-size: 16px;
+        background-color: #fff; 
+        color: #111; 
+        padding: 15px 0px; /* Más alto para dedos en móvil */
         transition: all 0.2s;
+        box-shadow: 4px 4px 0px #111; /* Sombra dura estilo Bauhaus */
     }
-    .stButton>button:hover {
-        background-color: #FFF !important;
-        color: #000 !important;
+    div.stButton > button:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px #111;
     }
-    /* Ocultar decoración de Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-</style>
+    div.stButton > button:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0px #111;
+        background-color: #f0f0f0;
+    }
+    
+    /* Ajuste de columnas en móvil */
+    [data-testid="column"] {
+        min-width: 0px !important; /* Permite que las columnas se encojan bien */
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-# --- PALETAS DE COLOR (TEXTO PLANO) ---
-PALETTES = {
-    "Bauhaus Clasica": [
-        "#E31C24", "#006BA6", "#FFD500", "#111111", "#F2F2F2"
-    ],
-    "Citricas": [
-        "#D3E629", "#E9EA2E", "#F48120", "#E22C26", "#FFFFFF"
-    ],
-    "Vitamina": [
-        "#FF0055", "#00C9A7", "#FFD700", "#8338EC", "#FFFFFF"
-    ],
-    "Grises Hormigon": [
-        "#111111", "#333333", "#555555", "#777777", "#999999", "#CCCCCC", "#E5E5E5"
-    ],
-    "Solo Negro": [
-        "#000000", "#FFFFFF"
-    ],
-    "Ocres y Mostaza": [
-        "#D19526", "#A85B25", "#6E3C1D", "#E0C28A", "#211E1A"
-    ]
-}
+# --- CABECERA ---
+st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Generador Bauhaus Puro</p>", unsafe_allow_html=True)
 
-# --- MOTOR GRÁFICO ---
-class BauhausEngine:
-    def __init__(self, size=800):
-        self.size = size
+# --- PANEL DE CONTROL VISIBLE ---
+# Usamos un expander estilizado en lugar del sidebar
+with st.expander("🎛️ TOCAME PARA EDITAR (CONTROLES)", expanded=True):
+    
+    st.write("### 1. Tinta y Color")
+    
+    # Selector de cantidad (Slider)
+    n_colores = st.slider("¿Cuántos colores de tinta?", 1, 5, 3)
+    
+    # Columnas para los selectores de color (Se adaptan a móvil)
+    cols = st.columns(n_colores)
+    colores_usuario = []
+    defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#333333"]
+    
+    for i, col in enumerate(cols):
+        with col:
+            # Etiqueta corta para móvil
+            c = st.color_picker(f"C{i+1}", defaults[i])
+            colores_usuario.append(c)
 
-    def _get_safe_coords(self, x1, y1, x2, y2):
-        """
-        CORRECCIÓN DEL ERROR:
-        Ordena las coordenadas para evitar que PIL reciba valores invertidos
-        (ej: izquierda mayor que derecha) que causan el ValueError.
-        """
-        lx, rx = min(x1, x2), max(x1, x2)
-        ty, by = min(y1, y2), max(y1, y2)
-        return lx, ty, rx, by
+    st.markdown("---")
+    st.write("### 2. Geometría")
+    
+    c_geo1, c_geo2 = st.columns(2)
+    with c_geo1:
+        complejidad = st.select_slider("Complejidad", options=[2, 4, 6, 8, 12], value=4)
+    with c_geo2:
+        densidad = st.slider("Densidad", 0.1, 1.0, 0.9)
 
-    def _draw_large_element(self, draw, colors):
-        color = random.choice(colors)
-        shape_type = random.choice(['circle', 'rect', 'triangle', 'thick_line', 'arc'])
-        s = self.size
-        
-        # Grilla base 8x8
-        step = s // 8
-        
-        # Coordenadas aleatorias ancladas a la grilla
-        x1 = random.randint(0, 8) * step
-        y1 = random.randint(0, 8) * step
-        x2 = random.randint(0, 8) * step
-        y2 = random.randint(0, 8) * step
-        
-        # Evitar coordenadas idénticas (puntos invisibles)
-        if x1 == x2: x2 += step * random.choice([-2, 2])
-        if y1 == y2: y2 += step * random.choice([-2, 2])
+    st.markdown("---")
+    
+    # Inicializar estado
+    if 'seed' not in st.session_state:
+        st.session_state.seed = 0
 
-        # Obtener coordenadas seguras base
-        lx, ty, rx, by = self._get_safe_coords(x1, y1, x2, y2)
+    # BOTÓN GRANDE DENTRO DEL PANEL
+    if st.button("🎲 ¡GENERAR DISEÑO NUEVO!"):
+        st.session_state.seed += 1
 
-        if shape_type == 'circle':
-            # Margen aleatorio
-            margin = random.randint(-step, step)
-            # Recalculamos coordenadas con margen y VOLVEMOS a asegurar el orden
-            # Esto arregla el crash específico de tu captura de pantalla
-            cx1, cy1 = lx - margin, ty - margin
-            cx2, cy2 = rx + margin, by + margin
-            final_lx, final_ty, final_rx, final_by = self._get_safe_coords(cx1, cy1, cx2, cy2)
-            
-            draw.ellipse([final_lx, final_ty, final_rx, final_by], fill=color)
-            
-        elif shape_type == 'rect':
-            if random.random() > 0.7:
-                # Marco grueso
-                w_line = random.choice([step//2, step])
-                # Dibujar rectángulo manual para controlar el borde interior
-                draw.rectangle([lx, ty, rx, by], fill=None, outline=color, width=w_line)
+# --- ALFABETO GEOMÉTRICO ---
+
+def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
+    tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
+
+    # 1. FONDO BLANCO
+    ax.add_patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0))
+    # 2. BORDE FINO
+    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5))
+
+    # 3. FORMAS
+    if tipo == 'circle':
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma))
+    elif tipo == 'quarter_circle':
+        w = patches.Wedge((x, y), 1, 0, 90, color=color_forma)
+        w.set_transform(tr)
+        ax.add_patch(w)
+    elif tipo == 'half_circle':
+        w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=color_forma)
+        w.set_transform(tr)
+        ax.add_patch(w)
+    elif tipo == 'triangle':
+        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=color_forma)
+        p.set_transform(tr)
+        ax.add_patch(p)
+    elif tipo == 'rectangles':
+        r1 = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
+        r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=color_acento)
+        r1.set_transform(tr)
+        r2.set_transform(tr)
+        ax.add_patch(r1)
+        ax.add_patch(r2)
+    elif tipo == 'arch':
+        w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=color_forma)
+        w1.set_transform(tr)
+        ax.add_patch(w1)
+    elif tipo == 'diagonal_split':
+        p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=color_forma)
+        p.set_transform(tr)
+        ax.add_patch(p)
+    elif tipo == 'bullseye':
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma))
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento))
+    elif tipo == 'cross':
+        r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=color_forma)
+        r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=color_forma)
+        ax.add_patch(r1)
+        ax.add_patch(r2)
+
+# --- MOTOR DE GENERACIÓN ---
+
+def generate_grid(size, user_colors, density):
+    seed_size = size // 2
+    tile_types = ['circle', 'quarter_circle', 'half_circle', 'triangle', 
+                  'rectangles', 'arch', 'diagonal_split', 'bullseye', 'cross', 'solid']
+    
+    seed = []
+    for _ in range(seed_size):
+        row = []
+        for _ in range(seed_size):
+            if random.random() > density:
+                tipo = 'solid'
+                c_main = '#FFFFFF'
+                c_acc = '#FFFFFF'
             else:
-                # Sólido
-                draw.rectangle([lx, ty, rx, by], fill=color)
+                tipo = random.choice(tile_types)
+                c_main = random.choice(user_colors)
+                if len(user_colors) > 1:
+                    avail = [c for c in user_colors if c != c_main]
+                    c_acc = random.choice(avail) if avail else c_main
+                else:
+                    c_acc = c_main
 
-        elif shape_type == 'thick_line':
-            w_line = random.choice([step//4, step//2, step])
-            draw.line([(x1, y1), (x2, y2)], fill=color, width=w_line)
+            rot = random.randint(0, 3)
+            row.append({'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc})
+        seed.append(row)
+
+    full_grid = [[None for _ in range(size)] for _ in range(size)]
+    for r in range(seed_size):
+        for c in range(seed_size):
+            cell = seed[r][c]
+            # Espejos
+            full_grid[r][c] = cell # Top-Left
             
-        elif shape_type == 'triangle':
-            p3x = random.randint(0, 8) * step
-            p3y = random.randint(0, 8) * step
-            draw.polygon([(x1, y1), (x2, y2), (p3x, p3y)], fill=color)
-
-        elif shape_type == 'arc':
-             w_line = step * random.randint(1, 2)
-             draw.arc([lx, ty, rx, by], start=0, end=random.choice([90, 180, 270, 360]), fill=color, width=w_line)
-
-    def generate(self, palette_name, n_colors, complexity):
-        # Selección segura de colores
-        full_palette = PALETTES[palette_name]
-        
-        if palette_name == "Solo Negro":
-            bg_color = "#FFFFFF"
-            active_colors = ["#000000"]
-        else:
-            # Garantizar que n_colors no exceda la longitud de la paleta
-            limit = min(n_colors, len(full_palette))
-            current_palette = random.sample(full_palette, limit)
+            tr_cell = cell.copy()
+            tr_cell['mirror_x'] = True 
+            full_grid[r][size - 1 - c] = tr_cell # Top-Right
             
-            bg_color = current_palette[0]
-            # Si solo hay 1 color (raro, pero posible), usar negro como activo
-            active_colors = current_palette[1:] if len(current_palette) > 1 else ["#000000"]
-
-        image = Image.new("RGB", (self.size, self.size), bg_color)
-        draw = ImageDraw.Draw(image)
-        
-        # Cantidad de formas basada en complejidad
-        count = int(complexity * 2.5) + 2
-
-        for _ in range(count):
-            self._draw_large_element(draw, active_colors)
+            bl_cell = cell.copy()
+            bl_cell['mirror_y'] = True
+            full_grid[size - 1 - r][c] = bl_cell # Bot-Left
             
-            # Inversión de color ocasional (Efecto negativo)
-            if random.random() > 0.92 and palette_name != "Solo Negro":
-                 image = ImageOps.invert(image)
-                 draw = ImageDraw.Draw(image)
+            br_cell = cell.copy()
+            br_cell['mirror_x'] = True
+            br_cell['mirror_y'] = True
+            full_grid[size - 1 - r][size - 1 - c] = br_cell # Bot-Right
+            
+    return full_grid
 
-        return image
-
-# --- INTERFAZ ---
-
-st.title("GENERADOR BAUHAUS")
-st.markdown("SISTEMA DE DISEÑO GENERATIVO 1X1")
-
-with st.sidebar:
-    st.markdown("### PARAMETROS")
+def render_final(grid, size):
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_aspect('equal')
+    ax.axis('off')
     
-    p_name = st.selectbox("PALETA", list(PALETTES.keys()), index=0)
-    
-    if p_name == "Solo Negro":
-        st.info("MODO MONOCROMO ACTIVO")
-        n_slider = 2
-    else:
-        max_c = len(PALETTES[p_name])
-        n_slider = st.slider("CANTIDAD COLORES", 2, max_c, max_c)
+    for r in range(size):
+        for c in range(size):
+            cell = grid[r][c]
+            x, y = c, size - 1 - r
+            rot = cell['rot']
+            
+            if cell.get('mirror_x'):
+                rot = {0:1, 1:0, 2:3, 3:2}[rot]
+            if cell.get('mirror_y'):
+                rot = {0:3, 1:2, 2:1, 3:0}[rot]
 
-    c_slider = st.slider("COMPLEJIDAD", 1, 10, 5)
+            draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-# Botón principal
-if st.button("GENERAR OBRA NUEVA"):
-    
-    engine = BauhausEngine(size=800)
-    
-    # Manejo de errores silencioso (por seguridad extrema)
-    try:
-        img = engine.generate(p_name, n_slider, c_slider)
-        st.image(img, use_container_width=True)
-        
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        byte_im = buf.getvalue()
-        
-        st.download_button(
-            label="DESCARGAR PNG",
-            data=byte_im,
-            file_name="bauhaus_generativo.png",
-            mime="image/png"
-        )
-    except Exception as e:
-        st.error(f"Error en calculo de geometria: {e}")
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
+    return fig
+
+# --- RENDERIZADO VISUAL ---
+
+random.seed(st.session_state.seed)
+
+grid_data = generate_grid(complejidad, colores_usuario, densidad)
+figura = render_final(grid_data, complejidad)
+
+# Mostrar imagen centrada
+st.pyplot(figura)
+
+# Botón de descarga debajo de la imagen
+buf = BytesIO()
+figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
+st.download_button(
+    label="⬇️ Descargar Imagen en HD",
+    data=buf.getvalue(),
+    file_name="bauhaus_kuki_mobile.png",
+    mime="image/png"
+)
