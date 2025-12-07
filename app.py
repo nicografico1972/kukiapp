@@ -6,8 +6,8 @@ import random
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Generador de Azulejos", layout="centered")
 
-st.title("Generador de Murales Geométricos 🎨")
-st.write("Inspirado en la azulejería portuguesa y patrones geométricos. Cada diseño es único.")
+st.title("KUKIAPP")
+st.write("Inspirado en KUKI de Varadero.")
 
 # --- LÓGICA DEL MOTOR (Igual que antes) ---
 
