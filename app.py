@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import numpy as np
-import random
 from io import BytesIO
+import random
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="PATRONES INFINITOS", layout="centered")
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS (UI MINIMALISTA & MODERNA) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -36,6 +36,7 @@ st.markdown("""
         margin-bottom: 3rem; letter-spacing: 0.5px;
     }
 
+    /* Expander Minimalista */
     .streamlit-expanderHeader {
         background-color: #f9f9f9;
         border: 1px solid #eee;
@@ -45,6 +46,10 @@ st.markdown("""
         padding: 1rem;
         display: flex;
         align-items: center;
+    }
+    .streamlit-expanderHeader svg {
+        margin-right: 10px;
+        fill: #333;
     }
     .streamlit-expanderContent {
         border: 1px solid #eee;
@@ -67,24 +72,25 @@ st.markdown("""
         color: #fff; 
         padding: 16px 0px; 
         transition: all 0.2s ease;
-        cursor: pointer;
     }
     
     div.stButton > button:hover { 
         background-color: #333;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    div.stButton > button:active {
-        transform: translateY(1px);
-        box-shadow: none;
     }
 
-    /* Inputs */
+    /* Ajuste de Inputs */
     .stSelectbox label, .stMultiSelect label, .stSlider label {
         font-weight: 600;
         color: #444;
         font-size: 0.9em;
+    }
+    
+    /* Etiquetas de formas */
+    .shape-label {
+        font-family: monospace;
+        margin-right: 8px;
+        font-size: 1.1em;
     }
 
     [data-testid="stSidebar"] { display: none; }
@@ -96,7 +102,7 @@ st.markdown("""
 st.markdown("<h1>PATRONES INFINITOS</h1>", unsafe_allow_html=True)
 st.markdown("<p class='author'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
-# --- DEFINICIÓN DE FORMAS ---
+# --- DEFINICIÓN DE FORMAS (SIN EMOJIS, SÍMBOLOS MINIMALISTAS) ---
 FORMAS_DISPONIBLES = {
     "△ Triángulos": "triangle",
     "◑ Curvas": "quarter_circle",
@@ -108,7 +114,7 @@ FORMAS_DISPONIBLES = {
     "■ Sólidos": "solid"
 }
 
-# --- PALETAS ---
+# --- PALETAS (SIN EMOJIS) ---
 PALETAS = {
     "Amarillo & Negro": ["#FFC300", "#000000"], 
     "Arquitecto (Grises)": ["#000000", "#333333", "#777777", "#BBBBBB", "#FFFFFF"],
@@ -139,6 +145,7 @@ with st.expander("⚙ CONFIGURACIÓN", expanded=True):
     p_name = st.selectbox("Paleta de Color", list(PALETAS.keys()))
     paleta_actual = PALETAS[p_name]
     
+    # Preview Color Minimalista
     cols = st.columns(len(paleta_actual))
     for i, c in enumerate(cols):
         c.markdown(f"<div style='background-color:{paleta_actual[i]};height:12px;width:100%;border-radius:2px;'></div>", unsafe_allow_html=True)
@@ -148,9 +155,11 @@ with st.expander("⚙ CONFIGURACIÓN", expanded=True):
     # 2. ESTRUCTURA
     col_a, col_b = st.columns(2)
     with col_a:
+        # Nombres limpios para los modos
         modo = st.selectbox("Modo de Patrón", ["Repetición (Secuencial)", "Caleidoscopio (Reflejo)"])
     with col_b:
-        grid_size = st.select_slider("Resolución", options=[4, 8, 12, 16, 20, 24], value=12)
+        # Resolución mínima cambiada a 2
+        grid_size = st.select_slider("Resolución", options=[2, 4, 8, 12, 16, 20, 24], value=8)
 
     # 3. SELECTOR DE FORMAS
     st.markdown("---")
@@ -167,19 +176,18 @@ with st.expander("⚙ CONFIGURACIÓN", expanded=True):
         )
         formas_seleccionadas = [FORMAS_DISPONIBLES[k] for k in seleccion]
         if not formas_seleccionadas:
-            formas_seleccionadas = ['solid']
+            formas_seleccionadas = ['solid'] # Fallback
     else:
+        # En modo caleidoscopio, usamos una selección predefinida para asegurar buen resultado
         st.caption("Se utilizará una selección optimizada de formas para el caleidoscopio.")
         formas_seleccionadas = ['triangle', 'quarter_circle', 'bow', 'strip', 'diamond']
 
     st.write("") 
     
-    # --- LOGICA DEL BOTÓN CORREGIDA ---
-    # Inicializamos el estado de la semilla si no existe
+    # --- LOGICA DEL BOTÓN ---
     if 'seed' not in st.session_state:
         st.session_state.seed = 0
         
-    # El botón simplemente incrementa el contador
     if st.button("GENERAR PATRÓN"):
         st.session_state.seed += 1
 
@@ -191,10 +199,10 @@ def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
     def patch(p):
         p.set_antialiased(False); p.set_linewidth(0); ax.add_patch(p)
 
-    # 1. Fondo base
+    # 1. Fondo base (Blanco)
     patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF')) 
     
-    # 2. Formas
+    # 2. Formas (CORREGIDAS PARA NO SALIRSE)
     if type == 'solid':
         patch(patches.Rectangle((x, y), 1, 1, color=c_main))
     elif type == 'triangle': 
@@ -204,6 +212,7 @@ def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
         w = patches.Wedge((x, y), 1, 0, 90, color=c_main)
         w.set_transform(tr); patch(w)
     elif type == 'strip': 
+        # Banda horizontal centrada (se mantiene dentro)
         r = patches.Rectangle((x, y+0.25), 1, 0.5, color=c_main)
         r.set_transform(tr); patch(r)
     elif type == 'circle':
@@ -219,31 +228,24 @@ def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
         p = patches.Polygon([(x+0.5, y), (x+1, y+0.5), (x+0.5, y+1), (x, y+0.5)], color=c_main)
         patch(p)
 
-    # 3. RETÍCULA INTERIOR (Ajustada para verse bien)
+    # 3. RETÍCULA INTERIOR (FINA Y SUTIL)
     grid_line = patches.Rectangle(
         (x, y), 1, 1, fill=False, 
-        edgecolor='#000000', linewidth=0.5, alpha=0.15, zorder=100, antialiased=True
+        edgecolor='#000000', linewidth=0.25, alpha=0.2, zorder=100, antialiased=True
     )
     ax.add_patch(grid_line)
 
 # --- GENERACIÓN DE PATRONES LÓGICOS + VARIACIÓN CONTROLADA ---
 
 def generate_logical_pattern(size, palette, mode, allowed_shapes):
-    # Aquí está la magia: Usamos la semilla del botón para BARAJAR las reglas
-    # pero no para tomar decisiones pixel a pixel.
-    
-    # 1. Configurar generador local con la semilla actual
     rng = random.Random(st.session_state.seed)
     
-    # 2. Barajar los ingredientes (Esto cambia el diseño al pulsar el botón)
-    # Hacemos copias para no alterar los originales
     current_shapes = allowed_shapes.copy()
     current_palette = palette.copy()
     
-    rng.shuffle(current_shapes) # Cambia el orden de las formas
-    rng.shuffle(current_palette) # Cambia qué color es el dominante
+    rng.shuffle(current_shapes)
+    rng.shuffle(current_palette)
     
-    # Parámetros aleatorios globales para esta "tirada"
     rotation_offset = rng.randint(0, 3) 
     pattern_shift = rng.randint(0, 10)
     
@@ -254,43 +256,68 @@ def generate_logical_pattern(size, palette, mode, allowed_shapes):
     if mode == "Repetición (Secuencial)":
         for r in range(size):
             for c in range(size):
-                # Usamos los ingredientes BARAJADOS pero con lógica matemática
-                
-                # Selección de Forma: Secuencia diagonal + desplazamiento
                 shape_idx = (r + c + pattern_shift) % num_shapes
                 tipo = current_shapes[shape_idx]
-                
-                # Rotación: Patrón de damero + offset aleatorio global
                 rot = ((r + c) % 2 + rotation_offset) % 4
-                
-                # Color: Secuencia basada en filas
                 c1_idx = r % num_colors
                 c1 = current_palette[c1_idx]
                 c2 = current_palette[(c1_idx + 1) % num_colors]
-                
                 grid[r][c] = {'type': tipo, 'rot': rot, 'c_main': c1, 'c_acc': c2}
 
-    else: # Caleidoscopio
+    else: # Caleidoscopio con Lógica de Bloques Grandes (Coherencia a alta resolución)
         seed_size = size // 2
-        for r in range(seed_size):
-            for c in range(seed_size):
-                # Lógica determinista pero con parámetros barajados
-                shape_idx = (c + pattern_shift) % num_shapes
-                tipo = current_shapes[shape_idx]
+        
+        # Definimos el tamaño del "bloque lógico" para que no sea celda a celda
+        # Si la resolución es alta (ej. 16), el bloque será de 4x4, creando formas grandes.
+        # Si es baja (ej. 4), el bloque será de 1x1 o 2x2.
+        block_size = max(1, seed_size // 2) 
+
+        for r_block in range(0, seed_size, block_size):
+            for c_block in range(0, seed_size, block_size):
                 
-                # Rotación matemática basada en coordenadas
-                rot = (r * c + rotation_offset) % 4
+                # Decisiones para TODO el bloque (coherencia)
+                # Usamos las coordenadas del bloque para la lógica determinista
+                block_id = (r_block // block_size) + (c_block // block_size)
                 
-                c1 = current_palette[r % num_colors]
-                c2 = current_palette[(r+1) % num_colors]
+                shape_idx = (block_id + pattern_shift) % num_shapes
+                block_tipo = current_shapes[shape_idx]
                 
-                cell = {'type': tipo, 'rot': rot, 'c_main': c1, 'c_acc': c2}
+                # Rotación base para el bloque
+                block_rot = (block_id + rotation_offset) % 4
                 
-                # Espejos
-                grid[r][c] = cell 
-                tr = cell.copy(); tr['mirror_x'] = True; grid[r][size-1-c] = tr 
-                bl = cell.copy(); bl['mirror_y'] = True; grid[size-1-r][c] = bl 
-                br = cell.copy(); br['mirror_x'] = True; br['mirror_y'] = True; grid[size-1-r][size-1-c] = br 
+                # Colores para el bloque
+                c1_idx = (r_block // block_size) % num_colors
+                c1 = current_palette[c1_idx]
+                c2 = current_palette[(c1_idx + 1) % num_colors]
+
+                # Rellenar las celdas dentro del bloque
+                for r_rel in range(block_size):
+                    for c_rel in range(block_size):
+                        r = r_block + r_rel
+                        c = c_block + c_rel
+                        
+                        # Si nos salimos de la semilla, parar
+                        if r >= seed_size or c >= seed_size: continue
+                        
+                        # Lógica interna del bloque para formar figuras grandes
+                        # Por ejemplo, si es un triángulo, orientarlo hacia el centro del bloque
+                        cell_rot = block_rot
+                        if block_tipo == 'triangle' or block_tipo == 'quarter_circle':
+                            # Lógica simple para orientar esquinas hacia el centro
+                            if r_rel < block_size/2 and c_rel < block_size/2: cell_rot = 0
+                            elif r_rel < block_size/2: cell_rot = 1
+                            elif c_rel < block_size/2: cell_rot = 3
+                            else: cell_rot = 2
+                            # Añadir la rotación base del bloque
+                            cell_rot = (cell_rot + block_rot) % 4
+
+                        cell = {'type': block_tipo, 'rot': cell_rot, 'c_main': c1, 'c_acc': c2}
+                        
+                        # Aplicar espejos
+                        grid[r][c] = cell 
+                        tr = cell.copy(); tr['mirror_x'] = True; grid[r][size-1-c] = tr 
+                        bl = cell.copy(); bl['mirror_y'] = True; grid[size-1-r][c] = bl 
+                        br = cell.copy(); br['mirror_x'] = True; br['mirror_y'] = True; grid[size-1-r][size-1-c] = br 
 
     return grid
 
@@ -311,6 +338,7 @@ def render_final(grid, size):
             
             add_tile_hd(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
+    # Marco Exterior Minimalista
     ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
     return fig
 
