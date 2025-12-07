@@ -46,10 +46,6 @@ st.markdown("""
         display: flex;
         align-items: center;
     }
-    .streamlit-expanderHeader svg {
-        margin-right: 10px;
-        fill: #333;
-    }
     .streamlit-expanderContent {
         border: 1px solid #eee;
         border-top: none;
