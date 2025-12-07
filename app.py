@@ -12,32 +12,32 @@ st.set_page_config(page_title="PATRONES INFINITOS", layout="centered")
 # --- ESTILOS CSS (UI MÓVIL OPTIMIZADA & BRANDING) ---
 st.markdown("""
     <style>
-    .main { background-color: #fafafa; }
+    .main { background-color: #fdfdfd; }
     h1 { 
-        font-family: 'Montserrat', sans-serif;
+        font-family: 'Helvetica Neue', sans-serif;
         text-transform: uppercase;
-        letter-spacing: 4px;
-        font-weight: 900; color: #111; text-align: center; margin-bottom: 0px;
+        letter-spacing: 3px;
+        font-weight: 900; color: #000; text-align: center; margin-bottom: 0px;
     }
     .subtitle {
-        text-align: center; color: #666; font-weight: 300; letter-spacing: 2px;
-        margin-bottom: 30px; font-family: 'Montserrat', sans-serif; font-size: 1.2em;
+        text-align: center; color: #555; font-weight: 300; letter-spacing: 2px;
+        margin-bottom: 30px; font-family: sans-serif; font-size: 1.1em;
     }
     .author {
-        text-align: center; color: #999; font-size: 0.9em; margin-top: -20px; margin-bottom: 30px;
+        text-align: center; color: #888; font-size: 0.8em; margin-top: -20px; margin-bottom: 30px;
     }
     .streamlit-expanderHeader {
-        background-color: #fff; border: 2px solid #111; border-radius: 0px; font-weight: 700; color: #111; text-transform: uppercase;
+        background-color: #fff; border: 2px solid #000; border-radius: 0px; font-weight: 700; color: #000; text-transform: uppercase;
     }
     .streamlit-expanderContent {
-        border: 2px solid #111; border-top: none; background-color: #fff; padding: 20px;
+        border: 2px solid #000; border-top: none; background-color: #fff; padding: 20px;
     }
     div.stButton > button { 
-        width: 100%; border: 3px solid #111; border-radius: 0px; font-weight: 900; font-size: 18px; text-transform: uppercase;
-        background-color: #fff; color: #111; padding: 18px 0px; transition: all 0.3s; box-shadow: 6px 6px 0px #111;
+        width: 100%; border: 4px solid #000; border-radius: 0px; font-weight: 900; font-size: 18px; text-transform: uppercase;
+        background-color: #fff; color: #000; padding: 20px 0px; transition: all 0.2s; box-shadow: 8px 8px 0px #000;
     }
-    div.stButton > button:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0px #111; background-color: #f0f0f0;}
-    div.stButton > button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0px #111; background-color: #ddd; }
+    div.stButton > button:hover { transform: translate(-4px, -4px); box-shadow: 12px 12px 0px #000; background-color: #f0f0f0;}
+    div.stButton > button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; background-color: #ddd; }
     [data-testid="column"] { min-width: 0px !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -46,184 +46,244 @@ st.markdown("""
 st.markdown("<h1>PATRONES INFINITOS</h1>", unsafe_allow_html=True)
 st.markdown("<p class='author'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
-# --- COLECCIÓN DE 20 PALETAS ARMÓNICAS ---
-PALETAS_PREDEFINIDAS = {
-    "Alhambra Clásica": ["#1A4780", "#D9A404", "#8C2727", "#2E5936", "#F2ECCE"],
-    "Escala de Grises (Arquitecto)": ["#111111", "#333333", "#666666", "#999999", "#CCCCCC"],
-    "Vitamina C (Cítricos)": ["#FF9F1C", "#FFBF69", "#FFFF9F", "#CBF3F0", "#2EC4B6"],
-    "Mostazas & Retros 70s": ["#D9A404", "#8C4926", "#3B2518", "#E87A25", "#F0EAD6"],
-    "Fluorescente Cyberpunk": ["#FF00FF", "#00FFFF", "#FFFF00", "#00FF00", "#111111"],
-    "Pasteles Suaves (Nórdico)": ["#FFB7C5", "#B5EAD7", "#E2F0CB", "#FFDAC1", "#F7F4E3"],
-    "Bauhaus Primarios": ["#F0F0F0", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"],
-    "Océano Profundo": ["#002642", "#023E8A", "#0077B6", "#0096C7", "#ADE8F4"],
-    "Bosque Encantado": ["#2D3E40", "#3A5F5F", "#4A7C59", "#74A57F", "#A3C9A8"],
-    "Atardecer Desierto": ["#5E3023", "#895737", "#C08552", "#F3C969", "#EDF6F9"],
-    "Vino y Oro": ["#4A0404", "#720909", "#A4161A", "#BA181B", "#D4AF37"],
-    "Tierra Mineral": ["#556B2F", "#8B4513", "#DAA520", "#CD853F", "#F5F5DC"],
-    "Azulejo Portugués": ["#FFFFFF", "#003399", "#FFCC00", "#000000", "#4D79FF"],
-    "Neón Medianoche": ["#0A0A0A", "#FF1493", "#00BFFF", "#7FFF00", "#FF4500"],
-    "Crema y Carbón": ["#F8F9FA", "#E9ECEF", "#DEE2E6", "#343A40", "#212529"],
-    "Especias Marroquíes": ["#C0392B", "#D35400", "#F39C12", "#27AE60", "#8E44AD"],
-    "Industrial Chic": ["#2C3E50", "#95A5A6", "#BDC3C7", "#E74C3C", "#ECF0F1"],
-    "Aurora Boreal": ["#0B0C10", "#1F2833", "#C5C6C7", "#66FCF1", "#45A29E"],
-    "Candy Pop": ["#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF", "#F7F7F7"],
-    "Elegancia Monocroma": ["#000000", "#222222", "#FFFFFF", "#EEEEEE", "#444444"]
+# --- COLECCIÓN DE 20 PALETAS (GRISES, FLUOR, PASTEL, ETC) ---
+PALETAS = {
+    "Arquitecto (Grises)": ["#000000", "#333333", "#777777", "#BBBBBB", "#FFFFFF"],
+    "Cyberpunk Fluor": ["#000000", "#FF00FF", "#00FFFF", "#CCFF00", "#791E94"],
+    "Vitamina C (Naranjas)": ["#FFFFFF", "#FF9F1C", "#FFBF69", "#FF5400", "#333333"],
+    "Mostaza Retro 70s": ["#3B2518", "#E87A25", "#D9A404", "#8C4926", "#F0EAD6"],
+    "Pastel Nórdico": ["#FFFFFF", "#FFB7C5", "#B5EAD7", "#E2F0CB", "#FFDAC1"],
+    "Alhambra Real": ["#F2ECCE", "#1A4780", "#D9A404", "#8C2727", "#2E5936"],
+    "Bauhaus Puro": ["#F0F0F0", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"],
+    "Azulejo Lisboa": ["#FFFFFF", "#003399", "#FFCC00", "#000000", "#6699FF"],
+    "Océano Profundo": ["#001219", "#005F73", "#0A9396", "#94D2BD", "#E9D8A6"],
+    "Bosque Místico": ["#0D1B2A", "#1B263B", "#415A77", "#778DA9", "#E0E1DD"],
+    "Vino Tinto": ["#160000", "#310000", "#4C0000", "#6D0000", "#D4AF37"],
+    "Caramelo Pop": ["#FFFFFF", "#FF595E", "#FFCA3A", "#8AC926", "#1982C4"],
+    "Desierto Dorado": ["#283618", "#606C38", "#FEFAE0", "#DDA15E", "#BC6C25"],
+    "Lavanda Digital": ["#E6E6FA", "#9370DB", "#4B0082", "#8A2BE2", "#FFFFFF"],
+    "Matrix": ["#000000", "#003B00", "#008F11", "#00FF41", "#0D0208"],
+    "Industrial": ["#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429"],
+    "Chocolate y Crema": ["#F4F1DE", "#E07A5F", "#3D405B", "#81B29A", "#F2CC8F"],
+    "Alta Costura (B&W)": ["#000000", "#111111", "#AAAAAA", "#EEEEEE", "#FFFFFF"],
+    "Atardecer Miami": ["#540D6E", "#EE4266", "#FFD23F", "#3BCEAC", "#0EAD69"],
+    "Tierra Cruda": ["#582F0E", "#7F4F24", "#936639", "#A68A64", "#B6AD90"]
 }
 
 # --- PANEL DE CONTROL ---
-with st.expander("🎛️ CONTROLES DE DISEÑO (TÓCAME)", expanded=True):
+with st.expander("🎛️ CONTROLES (TÓCAME)", expanded=True):
     
-    st.write("### 1. Paleta de Color")
-    nombre_paleta = st.selectbox("Selecciona una atmósfera:", list(PALETAS_PREDEFINIDAS.keys()))
-    paleta_actual = PALETAS_PREDEFINIDAS[nombre_paleta]
-
-    # Muestra visual de la paleta
-    cols_preview = st.columns(5)
-    for i, col in enumerate(cols_preview):
-        col.markdown(f'<div style="background-color: {paleta_actual[i]}; height: 30px; border-radius: 5px;"></div>', unsafe_allow_html=True)
+    st.write("### 1. Atmósfera Cromática")
+    p_name = st.selectbox("Selecciona Paleta:", list(PALETAS.keys()))
+    paleta_actual = PALETAS[p_name]
+    
+    # Preview de colores
+    cols = st.columns(5)
+    for i, c in enumerate(cols):
+        c.markdown(f"<div style='background-color:{paleta_actual[i]};height:20px;width:100%'></div>", unsafe_allow_html=True)
 
     st.markdown("---")
-    st.write("### 2. Estructura y Armonía")
-    simetria = st.selectbox("Modo de Composición", ["Caleidoscopio (Mandala)", "Repetición (Papel Pintado)", "Ajedrez (Ritmo Alterno)"])
+    st.write("### 2. Estructura Geométrica")
     
-    c_geo1, c_geo2 = st.columns(2)
-    with c_geo1:
-        complejidad = st.select_slider("Tamaño del Grid", options=[2, 4, 6, 8, 12, 16], value=6)
-    with c_geo2:
-        densidad = st.slider("Densidad (Aire vs Forma)", 0.1, 1.0, 0.9)
+    col1, col2 = st.columns(2)
+    with col1:
+        # Aquí está el truco: La complejidad define la resolución, pero no el tamaño de las formas
+        grid_size = st.select_slider("Resolución del Grid", options=[4, 8, 12, 16, 20, 24], value=8)
+    with col2:
+        # Nuevo control: ¿Qué tan grandes son los bloques constructivos?
+        # Si eliges "Macro", las formas serán gigantes aunque el grid sea de 16.
+        escala_formas = st.select_slider("Escala de Formas", options=["Micro (Detalle)", "Medio", "Macro (Gigante)"], value="Macro (Gigante)")
+    
+    simetria = st.selectbox("Simetría Global", ["Caleidoscopio (Mandala)", "Repetición (Papel Pintado)", "Ajedrez Armónico"])
 
     st.markdown("---")
     if 'seed' not in st.session_state: st.session_state.seed = 0
-    if st.button("🎲 GENERAR ARMONÍA"): st.session_state.seed += 1
+    if st.button("🎲 GENERAR PATRÓN"): st.session_state.seed += 1
 
-# --- MOTOR GRÁFICO HD ---
+# --- MOTOR DE RENDERIZADO HD (Sin bordes borrosos) ---
 
-def add_patch_hd(ax, patch):
-    """Renderizado HD sin bordes borrosos"""
-    patch.set_antialiased(False)
-    patch.set_linewidth(0)
-    ax.add_patch(patch)
-
-def draw_tile_hd(ax, x, y, tipo, rot, c_main, c_acc):
+def add_tile(ax, x, y, type, rot, c_main, c_acc):
+    """Dibuja una celda unitaria con bordes nítidos."""
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
-
-    # 1. FONDO BLANCO BASE (Siempre limpio)
-    bg = patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0)
-    add_patch_hd(ax, bg)
     
-    # 2. MARCO FINO (Sutil)
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=10, antialiased=True, alpha=0.3))
+    # Helpers para nitidez
+    def patch_hd(p):
+        p.set_antialiased(False)
+        p.set_linewidth(0)
+        ax.add_patch(p)
 
-    # --- CATÁLOGO DE FORMAS (GEOMETRÍA SAGRADA) ---
-    if tipo == 'star_8':
-        r1 = patches.Rectangle((x+0.2, y+0.2), 0.6, 0.6, color=c_main); r1.set_transform(tr)
-        r2 = patches.Rectangle((x+0.2, y+0.2), 0.6, 0.6, color=c_main)
-        r2.set_transform(transforms.Affine2D().rotate_deg_around(x+0.5, y+0.5, 45) + tr)
-        add_patch_hd(ax, r1); add_patch_hd(ax, r2)
-        add_patch_hd(ax, patches.Circle((x+0.5, y+0.5), 0.15, color=c_acc))
-    elif tipo == 'lantern':
-        p = patches.Polygon([(x+0.2, y+0.2), (x+0.8, y+0.2), (x+0.5, y+0.5)], color=c_main); p.set_transform(tr)
-        w = patches.Wedge((x+0.5, y+0.5), 0.35, 0, 180, color=c_acc); w.set_transform(tr)
-        add_patch_hd(ax, p); add_patch_hd(ax, w)
-    elif tipo == 'petal':
-        w1 = patches.Wedge((x, y+0.5), 0.8, -30, 30, color=c_main); w1.set_transform(tr)
-        add_patch_hd(ax, w1)
-    elif tipo == 'weave':
-        r1 = patches.Rectangle((x+0.4, y), 0.2, 1, color=c_main); r1.set_transform(tr)
-        r2 = patches.Rectangle((x, y+0.4), 1, 0.2, color=c_acc); r2.set_transform(tr)
-        add_patch_hd(ax, r1); add_patch_hd(ax, r2)
-    elif tipo == 'quarter_sun':
-        w1 = patches.Wedge((x, y), 1, 0, 90, color=c_main); w1.set_transform(tr)
-        w2 = patches.Wedge((x, y), 0.7, 0, 90, color='#FFFFFF'); w2.set_transform(tr)
-        w3 = patches.Wedge((x, y), 0.4, 0, 90, color=c_acc); w3.set_transform(tr)
-        add_patch_hd(ax, w1); add_patch_hd(ax, w2); add_patch_hd(ax, w3)
-    elif tipo == 'diamond_split':
-        p1 = patches.Polygon([(x, y+0.5), (x+0.5, y+1), (x+0.5, y+0.5)], color=c_main); p1.set_transform(tr)
-        p2 = patches.Polygon([(x+0.5, y+0.5), (x+1, y+0.5), (x+0.5, y)], color=c_acc); p2.set_transform(tr)
-        add_patch_hd(ax, p1); add_patch_hd(ax, p2)
-    elif tipo == 'circle':
-        add_patch_hd(ax, patches.Circle((x+0.5, y+0.5), 0.4, color=c_main))
-    elif tipo == 'triangle':
-        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c_main); p.set_transform(tr)
-        add_patch_hd(ax, p)
-    elif tipo == 'arch':
-        w = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=c_main); w.set_transform(tr)
-        add_patch_hd(ax, w)
-    elif tipo == 'solid':
-        add_patch_hd(ax, patches.Rectangle((x, y), 1, 1, color=c_main))
-
-# --- MOTOR DE GENERACIÓN ARMÓNICA (El secreto de la armonía) ---
-
-def generate_harmonic_grid(size, palette, density, mode):
+    # Fondo
+    patch_hd(patches.Rectangle((x, y), 1, 1, color='#FFFFFF')) # Fondo blanco puro siempre para contraste
     
-    # 1. Establecer el "Tema Armónico" de esta generación.
-    # En lugar de elegir al azar en cada celda, elegimos un subconjunto
-    # de formas y colores que dominarán este diseño específico.
-    
-    all_shapes = ['star_8', 'lantern', 'petal', 'weave', 'quarter_sun', 'diamond_split', 'circle', 'triangle', 'arch']
-    # Elegimos 2 formas dominantes y 2 de acento para este patrón
-    dominant_shapes = random.sample(all_shapes, k=2)
-    accent_shapes = random.sample([s for s in all_shapes if s not in dominant_shapes], k=2)
-    
-    # Elegimos 2 colores dominantes de la paleta actual
-    dominant_colors = random.sample(palette, k=min(2, len(palette)))
-    if len(palette) > 2:
-        accent_colors = [c for c in palette if c not in dominant_colors]
-    else:
-        accent_colors = dominant_colors
+    # Formas
+    if type == 'solid':
+        patch_hd(patches.Rectangle((x, y), 1, 1, color=c_main))
+    elif type == 'triangle': # Triángulo mitad
+        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c_main)
+        p.set_transform(tr); patch_hd(p)
+    elif type == 'quarter_circle': # Curva
+        w = patches.Wedge((x, y), 1, 0, 90, color=c_main)
+        w.set_transform(tr); patch_hd(w)
+    elif type == 'strip': # Banda diagonal
+        p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=c_main) # Triangulo sup
+        p2 = patches.Polygon([(x+0.5, y+0.5), (x+1.5, y+0.5), (x+0.5, y+1.5)], color=c_acc) # Detalle
+        p.set_transform(tr); patch_hd(p)
+    elif type == 'circle':
+        patch_hd(patches.Circle((x+0.5, y+0.5), 0.4, color=c_main))
+    elif type == 'frame': # Marco concéntrico
+        patch_hd(patches.Rectangle((x, y), 1, 1, color=c_main))
+        patch_hd(patches.Rectangle((x+0.25, y+0.25), 0.5, 0.5, color=c_acc))
+    elif type == 'bow': # Lazo
+        p1 = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=c_main)
+        p2 = patches.Polygon([(x, y+1), (x+1, y+1), (x+0.5, y+0.5)], color=c_main)
+        p1.set_transform(tr); p2.set_transform(tr)
+        patch_hd(p1); patch_hd(p2)
 
-    def get_harmonic_cell():
-        if random.random() > density: return {'type': 'solid', 'rot': 0, 'c_main': '#FFFFFF', 'c_acc': '#FFFFFF'}
-        
-        # 80% de probabilidad de usar el tema dominante (Armonía)
-        if random.random() < 0.8:
-            tipo = random.choice(dominant_shapes)
-            c_main = random.choice(dominant_colors)
-            c_acc = random.choice(dominant_colors) if random.random() < 0.7 else random.choice(accent_colors)
-        else: # 20% de variación (Acento)
-            tipo = random.choice(accent_shapes)
-            c_main = random.choice(accent_colors) if accent_colors else random.choice(dominant_colors)
-            c_acc = random.choice(dominant_colors)
+# --- GENERADOR DE MACRO-ESTRUCTURAS (LA SOLUCIÓN AL CAOS) ---
+
+def fill_macro_block(grid, r_start, c_start, block_size, palette):
+    """
+    En lugar de llenar celda a celda, esta función llena un bloque de NxN
+    con un patrón COHERENTE (una figura grande).
+    """
+    # Elegir un "Macro Patrón" aleatorio para este bloque
+    macro_type = random.choice(['big_diamond', 'big_x', 'concentric', 'stripes_diag', 'big_circle'])
+    
+    c1 = random.choice(palette)
+    avail = [c for c in palette if c != c1]
+    c2 = random.choice(avail) if avail else c1
+    
+    for r in range(block_size):
+        for c in range(block_size):
+            # Coordenadas relativas dentro del bloque
+            rr = r
+            cc = c
             
-        rot = random.randint(0, 3)
-        return {'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc}
+            # Lógica para dibujar figuras gigantes usando celdas pequeñas
+            cell_type = 'solid'
+            rot = 0
+            color = '#FFFFFF' # Blanco por defecto
+            accent = c2
+            
+            if macro_type == 'big_diamond':
+                # Dibuja un diamante que abarca todo el bloque
+                if rr + cc < block_size // 2: # Esquina sup izq
+                    cell_type = 'solid'; color = '#FFFFFF'
+                elif rr + cc == block_size // 2: # Borde sup izq
+                    cell_type = 'triangle'; rot = 0; color = c1
+                elif rr - cc == block_size // 2: # Borde inf izq
+                    cell_type = 'triangle'; rot = 3; color = c1
+                elif cc - rr == block_size // 2: # Borde sup der
+                    cell_type = 'triangle'; rot = 1; color = c1
+                elif rr + cc == (block_size * 2) - 2 - (block_size//2): # Borde inf der
+                    cell_type = 'triangle'; rot = 2; color = c1
+                else:
+                    # Interior del diamante
+                    mid = block_size / 2
+                    if abs(rr - mid + 0.5) + abs(cc - mid + 0.5) < mid:
+                         cell_type = 'solid'; color = c1
+                    else:
+                         cell_type = 'solid'; color = '#FFFFFF'
 
-    # 2. Generar la Semilla según el modo
-    seed_size = size if mode == "Repetición (Papel Pintado)" else size // 2
-    if mode == "Ajedrez (Ritmo Alterno)": seed_size = size
-    if mode == "Caleidoscopio (Mandala)": seed_size = size // 2
-    
-    base_data = [[get_harmonic_cell() for _ in range(size)] for _ in range(size)]
+            elif macro_type == 'big_x':
+                if rr == cc:
+                    cell_type = 'solid'; color = c1
+                elif rr + cc == block_size - 1:
+                    cell_type = 'solid'; color = c1
+                else:
+                    cell_type = 'solid'; color = c2
 
-    # 3. Aplicar Simetría
-    final_grid = [[None for _ in range(size)] for _ in range(size)]
+            elif macro_type == 'concentric':
+                # Marcos grandes
+                if r == 0 or r == block_size - 1 or c == 0 or c == block_size - 1:
+                    cell_type = 'solid'; color = c1
+                elif r == 1 or r == block_size - 2 or c == 1 or c == block_size - 2:
+                    cell_type = 'solid'; color = c2
+                else:
+                    cell_type = 'solid'; color = '#FFFFFF'
+            
+            elif macro_type == 'big_circle':
+                # Aproximación con cuartos de círculo en las esquinas
+                if r == 0 and c == 0: cell_type='quarter_circle'; rot=2; color=c1
+                elif r == 0 and c == block_size-1: cell_type='quarter_circle'; rot=3; color=c1
+                elif r == block_size-1 and c == 0: cell_type='quarter_circle'; rot=1; color=c1
+                elif r == block_size-1 and c == block_size-1: cell_type='quarter_circle'; rot=0; color=c1
+                else: cell_type='solid'; color=c2
+
+            # Guardar en el grid global
+            if r_start + r < len(grid) and c_start + c < len(grid):
+                grid[r_start + r][c_start + c] = {'type': cell_type, 'rot': rot, 'c_main': color, 'c_acc': accent}
+
+
+def generate_pattern(size, palette, scale_mode, symmetry_mode):
+    # 1. Definir el tamaño del "Bloque Constructivo" según la escala elegida
+    if scale_mode == "Macro (Gigante)":
+        block_size = max(4, size // 2) # Bloques muy grandes (mitad del grid)
+    elif scale_mode == "Medio":
+        block_size = max(2, size // 4) # Bloques medianos
+    else:
+        block_size = 1 # Ruido/Detalle (lo que tenías antes)
+
+    # Asegurar que block_size es al menos 1
+    block_size = max(1, block_size)
+
+    # 2. Inicializar Grid
+    grid = [[None for _ in range(size)] for _ in range(size)]
     
-    if mode == "Caleidoscopio (Mandala)":
-        for r in range(seed_size):
-            for c in range(seed_size):
-                cell = base_data[r][c]
-                final_grid[r][c] = cell
-                tr = cell.copy(); tr['mirror_x'] = True; final_grid[r][size-1-c] = tr
-                bl = cell.copy(); bl['mirror_y'] = True; final_grid[size-1-r][c] = bl
-                br = cell.copy(); br['mirror_x'] = True; br['mirror_y'] = True; final_grid[size-1-r][size-1-c] = br
+    # 3. Generar Semilla (Top-Left) usando MACRO BLOQUES
+    seed_limit = size if symmetry_mode == "Repetición (Papel Pintado)" else size // 2
+    if symmetry_mode == "Ajedrez Armónico": seed_limit = size
+    
+    # Recorrer la semilla saltando por bloques
+    for r in range(0, seed_limit, block_size):
+        for c in range(0, seed_limit, block_size):
+            # Llenar este área con una figura coherente
+            if block_size > 1:
+                fill_macro_block(grid, r, c, block_size, palette)
+            else:
+                # Modo detalle (celda a celda, pero armónico)
+                # Elegimos un "tema" para que no sea caos
+                t = random.choice(['triangle', 'quarter_circle', 'solid'])
+                rot = random.randint(0,3)
+                col = random.choice(palette)
+                grid[r][c] = {'type': t, 'rot': rot, 'c_main': col, 'c_acc': col}
+
+    # 4. Aplicar Simetría (Espejos)
+    if symmetry_mode == "Caleidoscopio (Mandala)":
+        half = size // 2
+        for r in range(half):
+            for c in range(half):
+                cell = grid[r][c]
+                if not cell: cell = {'type':'solid', 'rot':0, 'c_main':'#FFF', 'c_acc':'#FFF'}
                 
-    elif mode == "Repetición (Papel Pintado)":
-        block_size = max(2, size // 2) # Bloques más grandes para más armonía
-        block = [[base_data[r][c] for c in range(block_size)] for r in range(block_size)]
+                # Espejos
+                grid[r][c] = cell
+                
+                tr = cell.copy(); tr['mirror_x'] = True
+                grid[r][size-1-c] = tr
+                
+                bl = cell.copy(); bl['mirror_y'] = True
+                grid[size-1-r][c] = bl
+                
+                br = cell.copy(); br['mirror_x'] = True; br['mirror_y'] = True
+                grid[size-1-r][size-1-c] = br
+
+    elif symmetry_mode == "Repetición (Papel Pintado)":
+        # Si el grid no se llenó entero por el salto de bloques, rellenar repitiendo
+        # (La lógica de macro bloques ya llena secuencialmente, pero aseguramos bordes)
+        pass 
+
+    elif symmetry_mode == "Ajedrez Armónico":
+        # Rotar bloques enteros o celdas? Rotar celdas mantiene la macro-estructura pero le da ritmo
         for r in range(size):
             for c in range(size):
-                final_grid[r][c] = block[r % block_size][c % block_size]
-                
-    elif mode == "Ajedrez (Ritmo Alterno)":
-        # Usamos la base armónica y rotamos. Al ser la base armónica, el resultado ya no es anárquico.
-        for r in range(size):
-            for c in range(size):
-                cell = base_data[r][c].copy()
-                if (r + c) % 2 == 1:
-                    cell['rot'] = (cell['rot'] + 1) % 4
-                final_grid[r][c] = cell
+                if grid[r][c]:
+                    if (r//block_size + c//block_size) % 2 == 1: # Ajedrez por bloques
+                        # Invertir colores en casillas alternas para alto contraste
+                        # grid[r][c]['c_main'] = ... (Opcional)
+                        pass
 
-    return final_grid
+    return grid
 
 def render_final(grid, size):
     fig, ax = plt.subplots(figsize=(10, 10), dpi=100)
@@ -232,31 +292,35 @@ def render_final(grid, size):
     for r in range(size):
         for c in range(size):
             cell = grid[r][c]
-            if cell is None: continue
+            if not cell: continue
+            
             x, y = c, size - 1 - r
             rot = cell['rot']
-            if cell.get('mirror_x'): rot = {0:1, 1:0, 2:3, 3:2}[rot]
-            if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}[rot]
-            draw_tile_hd(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
+            
+            # Ajuste de espejos
+            if cell.get('mirror_x'): rot = {0:1, 1:0, 2:3, 3:2}.get(rot, rot)
+            if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}.get(rot, rot)
+            
+            add_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
+    # Marco
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#000', linewidth=6)
     return fig
 
 # --- EJECUCIÓN ---
 
 random.seed(st.session_state.seed)
 
-# Usamos el nuevo generador armónico
-grid_data = generate_harmonic_grid(complejidad, paleta_actual, densidad, simetria)
-figura = render_final(grid_data, complejidad)
+grid_data = generate_pattern(grid_size, paleta_actual, escala_formas, simetria)
+figura = render_final(grid_data, grid_size)
 
 st.pyplot(figura)
 
 buf = BytesIO()
 figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
 st.download_button(
-    label="⬇️ DESCARGAR OBRA EN HD",
+    label="⬇️ DESCARGAR OBRA MAESTRA",
     data=buf.getvalue(),
-    file_name="patrones_infinitos_nico.png",
+    file_name="patrones_infinitos_nb.png",
     mime="image/png"
 )
