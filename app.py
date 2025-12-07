@@ -1,262 +1,216 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.transforms as transforms
-import numpy as np
 import random
-from io import BytesIO
+from PIL import Image, ImageDraw
+import io
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="centered")
-
-# --- ESTILOS CSS (UI MEJORADA PARA MÓVIL) ---
-st.markdown("""
-    <style>
-    /* Fondo general */
-    .main { background-color: #ffffff; }
-    
-    /* Títulos */
-    h1 { 
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-        font-weight: 800; 
-        color: #111; 
-        text-align: center;
-        margin-bottom: 0px;
-    }
-    .subtitle {
-        text-align: center;
-        color: #666;
-        font-style: italic;
-        margin-bottom: 20px;
-    }
-
-    /* ESTILO DEL PANEL DE CONTROL (EXPANDER) */
-    .streamlit-expanderHeader {
-        background-color: #f0f2f6;
-        border: 2px solid #111;
-        border-radius: 8px;
-        font-weight: bold;
-        font-size: 18px;
-        color: #111;
-    }
-    .streamlit-expanderContent {
-        border: 2px solid #111;
-        border-top: none;
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
-        background-color: #ffffff;
-        padding: 20px;
-    }
-
-    /* BOTONES */
-    div.stButton > button { 
-        width: 100%; 
-        border: 3px solid #111; 
-        border-radius: 8px;
-        font-weight: 800; 
-        font-size: 16px;
-        background-color: #fff; 
-        color: #111; 
-        padding: 15px 0px; /* Más alto para dedos en móvil */
-        transition: all 0.2s;
-        box-shadow: 4px 4px 0px #111; /* Sombra dura estilo Bauhaus */
-    }
-    div.stButton > button:hover {
-        transform: translate(-2px, -2px);
-        box-shadow: 6px 6px 0px #111;
-    }
-    div.stButton > button:active {
-        transform: translate(2px, 2px);
-        box-shadow: 1px 1px 0px #111;
-        background-color: #f0f0f0;
-    }
-    
-    /* Ajuste de columnas en móvil */
-    [data-testid="column"] {
-        min-width: 0px !important; /* Permite que las columnas se encojan bien */
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- CABECERA ---
-st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Generador Bauhaus Puro</p>", unsafe_allow_html=True)
-
-# --- PANEL DE CONTROL VISIBLE ---
-# Usamos un expander estilizado en lugar del sidebar
-with st.expander("🎛️ TOCAME PARA EDITAR (CONTROLES)", expanded=True):
-    
-    st.write("### 1. Tinta y Color")
-    
-    # Selector de cantidad (Slider)
-    n_colores = st.slider("¿Cuántos colores de tinta?", 1, 5, 3)
-    
-    # Columnas para los selectores de color (Se adaptan a móvil)
-    cols = st.columns(n_colores)
-    colores_usuario = []
-    defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#333333"]
-    
-    for i, col in enumerate(cols):
-        with col:
-            # Etiqueta corta para móvil
-            c = st.color_picker(f"C{i+1}", defaults[i])
-            colores_usuario.append(c)
-
-    st.markdown("---")
-    st.write("### 2. Geometría")
-    
-    c_geo1, c_geo2 = st.columns(2)
-    with c_geo1:
-        complejidad = st.select_slider("Complejidad", options=[2, 4, 6, 8, 12], value=4)
-    with c_geo2:
-        densidad = st.slider("Densidad", 0.1, 1.0, 0.9)
-
-    st.markdown("---")
-    
-    # Inicializar estado
-    if 'seed' not in st.session_state:
-        st.session_state.seed = 0
-
-    # BOTÓN GRANDE DENTRO DEL PANEL
-    if st.button("🎲 ¡GENERAR DISEÑO NUEVO!"):
-        st.session_state.seed += 1
-
-# --- ALFABETO GEOMÉTRICO ---
-
-def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
-    tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
-
-    # 1. FONDO BLANCO
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0))
-    # 2. BORDE FINO
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5))
-
-    # 3. FORMAS
-    if tipo == 'circle':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma))
-    elif tipo == 'quarter_circle':
-        w = patches.Wedge((x, y), 1, 0, 90, color=color_forma)
-        w.set_transform(tr)
-        ax.add_patch(w)
-    elif tipo == 'half_circle':
-        w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=color_forma)
-        w.set_transform(tr)
-        ax.add_patch(w)
-    elif tipo == 'triangle':
-        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=color_forma)
-        p.set_transform(tr)
-        ax.add_patch(p)
-    elif tipo == 'rectangles':
-        r1 = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
-        r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=color_acento)
-        r1.set_transform(tr)
-        r2.set_transform(tr)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
-    elif tipo == 'arch':
-        w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=color_forma)
-        w1.set_transform(tr)
-        ax.add_patch(w1)
-    elif tipo == 'diagonal_split':
-        p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=color_forma)
-        p.set_transform(tr)
-        ax.add_patch(p)
-    elif tipo == 'bullseye':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma))
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento))
-    elif tipo == 'cross':
-        r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=color_forma)
-        r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=color_forma)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
-
-# --- MOTOR DE GENERACIÓN ---
-
-def generate_grid(size, user_colors, density):
-    seed_size = size // 2
-    tile_types = ['circle', 'quarter_circle', 'half_circle', 'triangle', 
-                  'rectangles', 'arch', 'diagonal_split', 'bullseye', 'cross', 'solid']
-    
-    seed = []
-    for _ in range(seed_size):
-        row = []
-        for _ in range(seed_size):
-            if random.random() > density:
-                tipo = 'solid'
-                c_main = '#FFFFFF'
-                c_acc = '#FFFFFF'
-            else:
-                tipo = random.choice(tile_types)
-                c_main = random.choice(user_colors)
-                if len(user_colors) > 1:
-                    avail = [c for c in user_colors if c != c_main]
-                    c_acc = random.choice(avail) if avail else c_main
-                else:
-                    c_acc = c_main
-
-            rot = random.randint(0, 3)
-            row.append({'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc})
-        seed.append(row)
-
-    full_grid = [[None for _ in range(size)] for _ in range(size)]
-    for r in range(seed_size):
-        for c in range(seed_size):
-            cell = seed[r][c]
-            # Espejos
-            full_grid[r][c] = cell # Top-Left
-            
-            tr_cell = cell.copy()
-            tr_cell['mirror_x'] = True 
-            full_grid[r][size - 1 - c] = tr_cell # Top-Right
-            
-            bl_cell = cell.copy()
-            bl_cell['mirror_y'] = True
-            full_grid[size - 1 - r][c] = bl_cell # Bot-Left
-            
-            br_cell = cell.copy()
-            br_cell['mirror_x'] = True
-            br_cell['mirror_y'] = True
-            full_grid[size - 1 - r][size - 1 - c] = br_cell # Bot-Right
-            
-    return full_grid
-
-def render_final(grid, size):
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.set_aspect('equal')
-    ax.axis('off')
-    
-    for r in range(size):
-        for c in range(size):
-            cell = grid[r][c]
-            x, y = c, size - 1 - r
-            rot = cell['rot']
-            
-            if cell.get('mirror_x'):
-                rot = {0:1, 1:0, 2:3, 3:2}[rot]
-            if cell.get('mirror_y'):
-                rot = {0:3, 1:2, 2:1, 3:0}[rot]
-
-            draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
-
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
-    return fig
-
-# --- RENDERIZADO VISUAL ---
-
-random.seed(st.session_state.seed)
-
-grid_data = generate_grid(complejidad, colores_usuario, densidad)
-figura = render_final(grid_data, complejidad)
-
-# Mostrar imagen centrada
-st.pyplot(figura)
-
-# Botón de descarga debajo de la imagen
-buf = BytesIO()
-figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
-st.download_button(
-    label="⬇️ Descargar Imagen en HD",
-    data=buf.getvalue(),
-    file_name="bauhaus_kuki_mobile.png",
-    mime="image/png"
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(
+    page_title="Generador de Mosaicos Geométricos",
+    page_icon="🎨",
+    layout="wide"
 )
+
+# --- CLASE GENERADORA DE PATRONES ---
+class PatternGenerator:
+    def __init__(self, size=800):
+        self.size = size
+        # Paleta de colores inspirada en la imagen de referencia (Bauhaus / Retro)
+        self.base_palette = [
+            "#E63946",  # Rojo vivo
+            "#F1FAEE",  # Blanco crema
+            "#A8DADC",  # Azul claro
+            "#457B9D",  # Azul medio
+            "#1D3557",  # Azul oscuro / Negro
+            "#2A9D8F",  # Verde azulado
+            "#E9C46A",  # Amarillo ocre
+            "#F4A261",  # Naranja
+            "#264653"   # Verde oscuro casi negro
+        ]
+
+    def _get_random_colors(self, n, seed):
+        """Selecciona n colores aleatorios de la paleta base."""
+        random.seed(seed)
+        return random.sample(self.base_palette, min(n, len(self.base_palette)))
+
+    def _draw_cell_pattern(self, draw, x, y, cell_size, colors, thickness, style_seed):
+        """
+        Dibuja un patrón geométrico dentro de una celda específica.
+        Se eligen formas abstractas basadas en la imagen de referencia.
+        """
+        random.seed(style_seed)
+        
+        # Colores para esta celda
+        bg_color = random.choice(colors)
+        fg_color = random.choice([c for c in colors if c != bg_color])
+        accent_color = random.choice([c for c in colors if c != bg_color])
+
+        # Fondo base de la celda
+        draw.rectangle([x, y, x + cell_size, y + cell_size], fill=bg_color)
+
+        # Tipos de patrones geométricos
+        pattern_type = random.choice(['triangle_half', 'diamond', 'cross', 'concentric', 'stripes', 'corner_triangle'])
+
+        if pattern_type == 'triangle_half':
+            # Triángulo diagonal (mitad de la celda)
+            points = [(x, y), (x + cell_size, y), (x, y + cell_size)]
+            draw.polygon(points, fill=fg_color)
+            
+        elif pattern_type == 'corner_triangle':
+            # Triángulo pequeño en esquina
+            offset = cell_size // 2
+            points = [(x, y), (x + offset, y), (x, y + offset)]
+            draw.polygon(points, fill=accent_color)
+
+        elif pattern_type == 'diamond':
+            # Rombo central
+            margin = thickness // 2
+            points = [
+                (x + cell_size // 2, y + margin),
+                (x + cell_size - margin, y + cell_size // 2),
+                (x + cell_size // 2, y + cell_size - margin),
+                (x + margin, y + cell_size // 2)
+            ]
+            draw.polygon(points, fill=fg_color)
+            # Centro opcional
+            if random.random() > 0.5:
+                inner_margin = cell_size // 3
+                draw.rectangle([x + inner_margin, y + inner_margin, x + cell_size - inner_margin, y + cell_size - inner_margin], fill=accent_color)
+
+        elif pattern_type == 'cross':
+            # Cruz gruesa
+            w = thickness
+            cx, cy = x + cell_size // 2, y + cell_size // 2
+            # Horizontal
+            draw.rectangle([x, cy - w//2, x + cell_size, cy + w//2], fill=fg_color)
+            # Vertical
+            draw.rectangle([cx - w//2, y, cx + w//2, y + cell_size], fill=fg_color)
+
+        elif pattern_type == 'concentric':
+            # Cuadrados concéntricos
+            steps = 3
+            step_size = cell_size // (steps * 2)
+            for i in range(steps):
+                current_color = fg_color if i % 2 == 0 else accent_color
+                margin = i * step_size * (thickness / 20) # Ajuste por grosor
+                draw.rectangle(
+                    [x + margin, y + margin, x + cell_size - margin, y + cell_size - margin], 
+                    outline=current_color, 
+                    width=int(thickness/2)
+                )
+
+        elif pattern_type == 'stripes':
+            # Bandas diagonales
+            width_line = max(1, int(thickness / 2))
+            for i in range(0, cell_size * 2, width_line * 2):
+                draw.line([(x, y + i), (x + i, y)], fill=fg_color, width=width_line)
+
+    def generate(self, num_colors=4, thickness=20, grid_divisions=4, seed=42):
+        """
+        Genera el mosaico completo 800x800.
+        Estrategia: Generar el cuadrante superior izquierdo y reflejarlo (Simetría)
+        para lograr el efecto de azulejo coherente.
+        """
+        image = Image.new("RGB", (self.size, self.size), "white")
+        draw = ImageDraw.Draw(image)
+        
+        selected_colors = self._get_random_colors(num_colors, seed)
+        
+        # Tamaño de cada celda en la grilla
+        cell_size = self.size // grid_divisions
+        
+        # Iteramos solo sobre la mitad de la grilla para crear simetría
+        # Si grid_divisions es impar, redondeamos hacia arriba para cubrir el centro
+        half_grid = (grid_divisions + 1) // 2 
+
+        for i in range(half_grid):
+            for j in range(half_grid):
+                # Coordenadas base
+                x = i * cell_size
+                y = j * cell_size
+                
+                # Semilla única para esta posición para consistencia
+                cell_seed = seed + (i * 100) + j
+                
+                # Creamos una imagen temporal pequeña para la celda
+                cell_img = Image.new("RGB", (cell_size, cell_size))
+                cell_draw = ImageDraw.Draw(cell_img)
+                
+                # Dibujamos el patrón en la celda base (0,0 relativo)
+                self._draw_cell_pattern(cell_draw, 0, 0, cell_size, selected_colors, thickness, cell_seed)
+                
+                # --- APLICAR SIMETRÍA (Reflejar en los 4 cuadrantes) ---
+                
+                # 1. Top-Left (Original)
+                image.paste(cell_img, (x, y))
+                
+                # 2. Top-Right (Espejo Horizontal)
+                tr_x = self.size - cell_size - x
+                image.paste(cell_img.transpose(Image.FLIP_LEFT_RIGHT), (tr_x, y))
+                
+                # 3. Bottom-Left (Espejo Vertical)
+                bl_y = self.size - cell_size - y
+                image.paste(cell_img.transpose(Image.FLIP_TOP_BOTTOM), (x, bl_y))
+                
+                # 4. Bottom-Right (Espejo Total)
+                image.paste(cell_img.transpose(Image.ROTATE_180), (tr_x, bl_y))
+
+        return image
+
+# --- INTERFAZ STREAMLIT ---
+
+st.title("🧩 Generador de Mosaicos Geométricos")
+st.markdown("""
+Genera patrones abstractos estilo "azulejo" listos para usar. 
+Ajusta los parámetros en la barra lateral y crea composiciones únicas.
+""")
+
+# Barra Lateral de Controles
+with st.sidebar:
+    st.header("Parámetros del Diseño")
+    
+    seed_val = st.number_input("Semilla (Seed)", value=42, help="Cambia este número para obtener un diseño completamente distinto.")
+    
+    num_colors = st.slider("Número de Colores", min_value=2, max_value=8, value=4)
+    
+    thickness = st.slider("Grosor / Densidad", min_value=5, max_value=60, value=30, help="Controla el ancho de líneas y marcos.")
+    
+    complexity = st.select_slider("Complejidad de la Grilla", options=[2, 4, 6, 8, 10], value=4, help="Define en cuántas celdas se divide el lienzo.")
+    
+    if st.button("🎲 Generar Nuevo Patrón Aleatorio"):
+        seed_val = random.randint(0, 10000)
+        # Hack para actualizar el input number visualmente requiere rerun, 
+        # pero para simplicidad solo actualizamos la generación.
+    
+    st.info(f"Semilla actual: {seed_val}")
+
+# Lógica Principal
+generator = PatternGenerator(size=800)
+
+# Generar imagen
+img = generator.generate(
+    num_colors=num_colors, 
+    thickness=thickness, 
+    grid_divisions=complexity, 
+    seed=seed_val
+)
+
+# Columnas para centrar la imagen
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col2:
+    st.image(img, caption=f"Patrón Generado (Seed: {seed_val})", use_container_width=True)
+    
+    # Preparar descarga
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+    
+    st.download_button(
+        label="⬇️ Descargar Patrón PNG (800x800)",
+        data=byte_im,
+        file_name=f"patron_geometrico_{seed_val}.png",
+        mime="image/png"
+    )
+
+st.markdown("---")
+st.markdown("**Nota:** El algoritmo utiliza una grilla simétrica para asegurar que el patrón se sienta como un 'azulejo' completo y estético, similar a los patrones Bauhuas o hidráulicos.")
