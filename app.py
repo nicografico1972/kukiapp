@@ -1,74 +1,73 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib.path import Path
 import matplotlib.transforms as transforms
 import numpy as np
 import random
 from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="NICOESCHER", layout="centered")
+st.set_page_config(page_title="KUKIAPP - Escher", layout="centered")
 
-# --- ESTILOS CSS (UI MÓVIL MEJORADA) ---
+# --- ESTILOS CSS (UI MÓVIL MEJORADA - Estilo Grabado) ---
 st.markdown("""
     <style>
-    /* Fondo general */
-    .main { background-color: #ffffff; }
-    
-    /* Títulos */
+    .main { background-color: #fcfcfc; }
     h1 { 
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+        font-family: 'Garamond', 'Times New Roman', serif; 
         font-weight: 800; 
-        color: #111; 
+        color: #222; 
         text-align: center;
         margin-bottom: 0px;
     }
     .subtitle {
         text-align: center;
-        color: #666;
+        color: #555;
         font-style: italic;
+        font-family: serif;
         margin-bottom: 20px;
     }
 
     /* ESTILO DEL PANEL DE CONTROL (EXPANDER) */
     .streamlit-expanderHeader {
-        background-color: #f0f2f6;
-        border: 2px solid #111;
+        background-color: #eaddca; /* Color pergamino */
+        border: 2px solid #5b432c; /* Marrón sepia */
         border-radius: 8px;
         font-weight: bold;
         font-size: 18px;
-        color: #111;
+        color: #333;
     }
     .streamlit-expanderContent {
-        border: 2px solid #111;
+        border: 2px solid #5b432c;
         border-top: none;
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
-        background-color: #ffffff;
+        background-color: #fffaf0;
         padding: 20px;
     }
 
     /* BOTONES */
     div.stButton > button { 
         width: 100%; 
-        border: 3px solid #111; 
+        border: 3px solid #5b432c; 
         border-radius: 8px;
         font-weight: 800; 
         font-size: 16px;
-        background-color: #fff; 
-        color: #111; 
-        padding: 15px 0px; /* Más alto para dedos en móvil */
+        background-color: #eaddca; 
+        color: #333; 
+        padding: 15px 0px; /* Más alto para móvil */
         transition: all 0.2s;
-        box-shadow: 4px 4px 0px #111; /* Sombra dura estilo Bauhaus */
+        box-shadow: 4px 4px 0px #5b432c; /* Sombra dura */
     }
     div.stButton > button:hover {
         transform: translate(-2px, -2px);
-        box-shadow: 6px 6px 0px #111;
+        box-shadow: 6px 6px 0px #5b432c;
     }
     div.stButton > button:active {
         transform: translate(2px, 2px);
-        box-shadow: 1px 1px 0px #111;
-        background-color: #f0f0f0;
+        box-shadow: 1px 1px 0px #5b432c;
+        background-color: #d4c5b3;
     }
     
     /* Ajuste de columnas en móvil */
@@ -80,193 +79,148 @@ st.markdown("""
 
 # --- CABECERA ---
 st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Generador Bauhaus Puro (HD)</p>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Generador de Teselados Escherianos</p>", unsafe_allow_html=True)
 
-# --- PANEL DE CONTROL VISIBLE ---
-with st.expander("🎛️ TOCAME PARA EDITAR (CONTROLES)", expanded=True):
+# --- PANEL DE CONTROL VISIBLE (EXPANDER) ---
+with st.expander("🎛️ CONTROLES DE METAMORFOSIS (TÓCAME)", expanded=True):
     
-    st.write("### 1. Tinta y Color")
-    n_colores = st.slider("¿Cuántos colores de tinta?", 1, 5, 3)
+    st.write("### 1. La Criatura")
+    motif_type = st.selectbox("Elige el motivo:", ["Peces Entrelazados", "Mariposas Geométricas", "Lagartos (Reptiles)"])
     
-    cols = st.columns(n_colores)
-    colores_usuario = []
-    # Colores por defecto inspirados en tu imagen de referencia
-    defaults = ["#111111", "#D92B2B", "#2B5CD9", "#F2C84B", "#3A7D44"]
-    
-    for i, col in enumerate(cols):
-        with col:
-            c = st.color_picker(f"C{i+1}", defaults[i])
-            colores_usuario.append(c)
+    st.write("### 2. La Dualidad (Colores)")
+    cols = st.columns(2)
+    with cols[0]:
+        c_figura = st.color_picker("Color Figura", "#2C3E50") # Azul oscuro sepia
+    with cols[1]:
+        c_fondo = st.color_picker("Color Fondo", "#EADDCA") # Crema claro
 
-    st.markdown("---")
-    st.write("### 2. Geometría")
-    
-    c_geo1, c_geo2 = st.columns(2)
-    with c_geo1:
-        complejidad = st.select_slider("Complejidad", options=[2, 4, 6, 8, 12], value=4)
-    with c_geo2:
-        densidad = st.slider("Densidad", 0.1, 1.0, 0.9)
+    st.write("### 3. El Infinito (Tamaño)")
+    grid_size = st.select_slider("Repeticiones", options=[4, 6, 8, 12, 16], value=8)
 
     st.markdown("---")
     
-    if 'seed' not in st.session_state:
-        st.session_state.seed = 0
+    # Inicializar estado
+    if 'seed_escher' not in st.session_state:
+        st.session_state.seed_escher = 0
 
-    if st.button("🎲 ¡GENERAR DISEÑO NUEVO!"):
-        st.session_state.seed += 1
+    # BOTÓN GRANDE
+    if st.button("🎲 ¡TESELAR EL PLANO!"):
+        st.session_state.seed_escher += 1
 
-# --- ALFABETO GEOMÉTRICO (RENDERIZADO HD) ---
+# --- GEOMETRÍA SAGRADA: DEFINICIÓN DE RUTAS (PATHS) ---
+# Polígonos diseñados matemáticamente para encajar sin huecos.
 
-def add_patch_hd(ax, patch):
-    """Helper para añadir parches con renderizado nítido."""
-    # Desactiva el antialiasing para bordes perfectos
-    patch.set_antialiased(False)
-    # Asegura que no haya borde invisible que cause artefactos
-    patch.set_linewidth(0)
-    ax.add_patch(patch)
+def get_escher_path(motif_name):
+    """Devuelve el objeto Path de Matplotlib para el motivo seleccionado."""
+    vertices = []
+    codes = []
 
-def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
-    tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
+    if motif_name == "Peces Entrelazados":
+        # Pez que tesela por traslación (p1)
+        verts = [
+            (0.0, 0.0), (0.2, 0.1), (0.4, -0.1), (0.5, 0.0), # Cola a panza inferior
+            (0.6, 0.2), (0.8, 0.1), (1.0, 0.3), # Panza a cabeza
+            (0.9, 0.5), (1.1, 0.7), (1.0, 1.0), # Cabeza
+            (0.8, 0.9), (0.6, 1.1), (0.5, 1.0), # Lomo superior (inverso del inferior)
+            (0.4, 0.8), (0.2, 0.9), (0.0, 0.7), # Lomo a cola
+            (-0.1, 0.5), (0.1, 0.3), (0.0, 0.0)  # Cierre cola
+        ]
+        vertices = verts + [(0.0, 0.0)]
+        codes = [Path.MOVETO] + [Path.LINETO]*(len(verts)-1) + [Path.CLOSEPOLY]
 
-    # 1. FONDO BLANCO (HD)
-    bg = patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0)
-    add_patch_hd(ax, bg)
-    
-    # 2. BORDE FINO (El único que sí queremos con antialiasing para que se vea bien)
-    # Usamos un truco: dibujar un rectángulo ligeramente más pequeño con borde
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=0.5, zorder=5, antialiased=True))
+    elif motif_name == "Mariposas Geométricas":
+        # Basado en "El Molinillo" que rota 90 grados (p4)
+        verts = [
+            (0,0), (0.5, -0.2), (1,0), (1.2, 0.5), (1,1), (0.5, 1.2), (0,1), (-0.2, 0.5), (0,0)
+        ]
+        codes = [Path.MOVETO] + [Path.LINETO]*(len(verts)-2) + [Path.CLOSEPOLY]
+        
+    elif motif_name == "Lagartos (Reptiles)":
+        # Pieza compleja que se entrelaza rotando (p4g aproximado)
+        verts = [
+             (0.0, 0.0), (0.5, -0.15), (1.0, 0.0), # Base curva
+             (1.15, 0.5), (1.0, 1.0), # Derecha curva
+             (0.5, 1.15), (0.0, 1.0), # Arriba curva
+             (-0.15, 0.5), (0.0, 0.0) # Izquierda curva
+        ]
+        codes = [Path.MOVETO] + [Path.LINETO]*(len(verts)-2) + [Path.CLOSEPOLY]
 
-    # 3. FORMAS (HD)
-    if tipo == 'circle':
-        p = patches.Circle((x+0.5, y+0.5), 0.4, color=color_forma)
-        add_patch_hd(ax, p)
-    elif tipo == 'quarter_circle':
-        w = patches.Wedge((x, y), 1, 0, 90, color=color_forma)
-        w.set_transform(tr)
-        add_patch_hd(ax, w)
-    elif tipo == 'half_circle':
-        w = patches.Wedge((x+0.5, y+0.5), 0.5, 0, 180, color=color_forma)
-        w.set_transform(tr)
-        add_patch_hd(ax, w)
-    elif tipo == 'triangle':
-        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=color_forma)
-        p.set_transform(tr)
-        add_patch_hd(ax, p)
-    elif tipo == 'rectangles':
-        r1 = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
-        r2 = patches.Rectangle((x+0.5, y+0.2), 0.5, 0.8, color=color_acento)
-        r1.set_transform(tr)
-        r2.set_transform(tr)
-        add_patch_hd(ax, r1)
-        add_patch_hd(ax, r2)
-    elif tipo == 'arch':
-        w1 = patches.Wedge((x+0.5, y), 0.5, 0, 180, color=color_forma)
-        w1.set_transform(tr)
-        add_patch_hd(ax, w1)
-    elif tipo == 'diagonal_split':
-        p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=color_forma)
-        p.set_transform(tr)
-        add_patch_hd(ax, p)
-    elif tipo == 'bullseye':
-        c1 = patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma)
-        c2 = patches.Circle((x+0.5, y+0.5), 0.25, color=color_acento)
-        add_patch_hd(ax, c1)
-        add_patch_hd(ax, c2)
-    elif tipo == 'cross':
-        r1 = patches.Rectangle((x+0.35, y), 0.3, 1, color=color_forma)
-        r2 = patches.Rectangle((x, y+0.35), 1, 0.3, color=color_forma)
-        add_patch_hd(ax, r1)
-        add_patch_hd(ax, r2)
+    return Path(vertices, codes)
 
-# --- MOTOR DE GENERACIÓN ---
+# --- MOTOR DE RENDERIZADO ESCHER ---
 
-def generate_grid(size, user_colors, density):
-    seed_size = size // 2
-    tile_types = ['circle', 'quarter_circle', 'half_circle', 'triangle', 
-                  'rectangles', 'arch', 'diagonal_split', 'bullseye', 'cross', 'solid']
-    
-    seed = []
-    for _ in range(seed_size):
-        row = []
-        for _ in range(seed_size):
-            if random.random() > density:
-                tipo = 'solid'
-                c_main = '#FFFFFF'
-                c_acc = '#FFFFFF'
-            else:
-                tipo = random.choice(tile_types)
-                c_main = random.choice(user_colors)
-                if len(user_colors) > 1:
-                    avail = [c for c in user_colors if c != c_main]
-                    c_acc = random.choice(avail) if avail else c_main
-                else:
-                    c_acc = c_main
-
-            rot = random.randint(0, 3)
-            row.append({'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc})
-        seed.append(row)
-
-    full_grid = [[None for _ in range(size)] for _ in range(size)]
-    for r in range(seed_size):
-        for c in range(seed_size):
-            cell = seed[r][c]
-            full_grid[r][c] = cell # Top-Left
-            
-            tr_cell = cell.copy()
-            tr_cell['mirror_x'] = True 
-            full_grid[r][size - 1 - c] = tr_cell # Top-Right
-            
-            bl_cell = cell.copy()
-            bl_cell['mirror_y'] = True
-            full_grid[size - 1 - r][c] = bl_cell # Bot-Left
-            
-            br_cell = cell.copy()
-            br_cell['mirror_x'] = True
-            br_cell['mirror_y'] = True
-            full_grid[size - 1 - r][size - 1 - c] = br_cell # Bot-Right
-            
-    return full_grid
-
-def render_final(grid, size):
-    # Aumentamos el DPI de la figura base para mayor resolución
+def render_escher_tessellation(motif, size, c1, c2):
+    # Usamos DPI alto para que se vea bien en pantalla
     fig, ax = plt.subplots(figsize=(10, 10), dpi=100)
     ax.set_aspect('equal')
     ax.axis('off')
     
-    for r in range(size):
-        for c in range(size):
-            cell = grid[r][c]
-            x, y = c, size - 1 - r
-            rot = cell['rot']
+    # Color de fondo base
+    fig.patch.set_facecolor(c2)
+    
+    path = get_escher_path(motif)
+    margin = 1
+    
+    for row in range(-margin, size + margin):
+        for col in range(-margin, size + margin):
             
-            if cell.get('mirror_x'):
-                rot = {0:1, 1:0, 2:3, 3:2}[rot]
-            if cell.get('mirror_y'):
-                rot = {0:3, 1:2, 2:1, 3:0}[rot]
+            # Lógica de color alterno (tablero de ajedrez) para efecto figura/fondo
+            color = c1 if (row + col) % 2 == 0 else c2
+            
+            if motif == "Peces Entrelazados":
+                # Traslación simple
+                x, y = col, row
+                patch = patches.PathPatch(path, facecolor=color, edgecolor=color, linewidth=0.5)
+                trans = transforms.Affine2D().translate(x, y) + ax.transData
+                patch.set_transform(trans)
+                ax.add_patch(patch)
 
-            draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
+            elif motif == "Mariposas Geométricas":
+                # Rotación 90º alternada
+                x, y = col, row
+                rot_deg = 0
+                if row % 2 == 0 and col % 2 == 1: rot_deg = 90
+                elif row % 2 == 1 and col % 2 == 1: rot_deg = 180
+                elif row % 2 == 1 and col % 2 == 0: rot_deg = 270
+                
+                patch = patches.PathPatch(path, facecolor=color, edgecolor='#333', linewidth=0.5)
+                trans = transforms.Affine2D().rotate_deg_around(0.5, 0.5, rot_deg).translate(x, y) + ax.transData
+                patch.set_transform(trans)
+                ax.add_patch(patch)
 
-    # Marco Exterior Grueso (Negro)
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
+            elif motif == "Lagartos (Reptiles)":
+                # Rotación compleja
+                x, y = col, row
+                rot_deg = (row % 2 + col % 2) * 90
+                if (row+col)%4 == 3: rot_deg = 270
+
+                patch = patches.PathPatch(path, facecolor=color, zorder=2)
+                trans = transforms.Affine2D().rotate_deg(rot_deg).translate(x, y) + ax.transData
+                patch.set_transform(trans)
+                ax.add_patch(patch)
+
+
+    # Límites y marco
+    ax.set_xlim(0, size)
+    ax.set_ylim(0, size)
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#5b432c', linewidth=8)
     
     return fig
 
-# --- RENDERIZADO VISUAL ---
+# --- EJECUCIÓN ---
+random.seed(st.session_state.seed_escher)
 
-random.seed(st.session_state.seed)
+figura = render_escher_tessellation(motif_type, grid_size, c_figura, c_fondo)
 
-grid_data = generate_grid(complejidad, colores_usuario, densidad)
-figura = render_final(grid_data, complejidad)
-
+# Mostrar imagen
 st.pyplot(figura)
 
-# Botón de descarga (Alta Resolución real)
+# Botón de descarga HD
 buf = BytesIO()
-# Guardamos con DPI muy alto y sin antialiasing en el guardado
-figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
+figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor=c_fondo)
 st.download_button(
-    label="⬇️ Descargar Imagen en HD (Nítida)",
+    label="⬇️ Descargar Grabado en HD",
     data=buf.getvalue(),
-    file_name="bauhaus_kuki_hd.png",
+    file_name="escher_kuki.png",
     mime="image/png"
 )
