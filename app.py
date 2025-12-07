@@ -5,10 +5,10 @@ import random
 import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="KUKIAPP, layout="centered")
+st.set_page_config(page_title="KUKIAPP", layout="centered")
 
-st.title("KUKIAPP")
-st.write("CREA PATRONES CON KUKIESTILO")
+st.title("Creador de estilos kukis")
+st.write("kikis.")
 
 # --- PALETA DE COLORES VIBRANTE ---
 PALETA_RICA = [
