@@ -12,16 +12,13 @@ st.set_page_config(page_title="PATRONES INFINITOS", layout="centered")
 # --- ESTILOS CSS (UI MODERNA REACT/NEXT.JS) ---
 st.markdown("""
     <style>
-    /* Importar fuente Inter (típica de UI moderna) */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-    /* Fondo y Tipografía General */
     .stApp {
         background-color: #ffffff;
         font-family: 'Inter', sans-serif;
     }
     
-    /* Título Principal */
     h1 { 
         font-family: 'Inter', sans-serif;
         font-weight: 800; 
@@ -32,13 +29,11 @@ st.markdown("""
         margin-bottom: 0px;
     }
     
-    /* Subtítulo */
     .author {
         text-align: center; color: #888; font-size: 0.9em; font-weight: 600; 
         margin-top: -10px; margin-bottom: 40px; letter-spacing: 1px;
     }
 
-    /* Estilo del Panel de Control (Expander Moderno) */
     .streamlit-expanderHeader {
         background-color: #ffffff;
         border: 1px solid #eaeaea;
@@ -62,37 +57,31 @@ st.markdown("""
         padding: 20px;
     }
 
-    /* BOTÓN DE GENERAR (DISEÑO PREMIUM) */
     div.stButton > button { 
         width: 100%; 
         border: none;
-        border-radius: 12px; /* Redondeado moderno */
+        border-radius: 12px; 
         font-weight: 700; 
         font-size: 16px; 
         letter-spacing: 0.5px;
-        
-        /* Gradiente sutil o negro sólido */
         background: #111111; 
         color: #ffffff; 
-        
         padding: 18px 0px; 
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         box-shadow: 0 4px 14px 0 rgba(0,0,0,0.39);
     }
     
-    /* Efecto Hover del Botón */
     div.stButton > button:hover { 
         transform: translateY(-2px); 
         box-shadow: 0 8px 20px rgba(0,0,0,0.4); 
         background-color: #000;
-        color: #FFC300; /* Amarillo Huevo al pasar el mouse */
+        color: #FFC300; 
     }
     div.stButton > button:active { 
         transform: translateY(1px); 
         box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
     }
 
-    /* Ajustes generales */
     [data-testid="stSidebar"] { display: none; }
     .block-container { padding-top: 2rem; }
     </style>
@@ -102,9 +91,9 @@ st.markdown("""
 st.markdown("<h1>PATRONES INFINITOS</h1>", unsafe_allow_html=True)
 st.markdown("<p class='author'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
-# --- PALETAS (AMARILLO HUEVO PRIMERA) ---
+# --- PALETAS ---
 PALETAS = {
-    "🟡 Amarillo Huevo & Negro": ["#FFC300", "#000000"], # AMARILLO HUEVO DE DISEÑO
+    "🟡 Amarillo Huevo & Negro": ["#FFC300", "#000000"], 
     "🏛️ Arquitecto (Grises)": ["#000000", "#333333", "#777777", "#BBBBBB", "#FFFFFF"],
     "💊 Cyberpunk Fluor": ["#000000", "#FF00FF", "#00FFFF", "#CCFF00", "#791E94"],
     "🍊 Vitamina C": ["#FFFFFF", "#FF9F1C", "#FFBF69", "#FF5400", "#333333"],
@@ -133,12 +122,11 @@ with st.expander("🎛️ PERSONALIZAR DISEÑO", expanded=True):
     p_name = st.selectbox("Paleta de Color", list(PALETAS.keys()), label_visibility="collapsed")
     paleta_actual = PALETAS[p_name]
     
-    # Preview Minimalista
     cols = st.columns(len(paleta_actual))
     for i, c in enumerate(cols):
         c.markdown(f"<div style='background-color:{paleta_actual[i]};height:24px;width:100%;border-radius:4px;'></div>", unsafe_allow_html=True)
 
-    st.write("") # Espacio
+    st.write("") 
     st.caption("2. ESTRUCTURA & ESCALA")
     
     c1, c2 = st.columns(2)
@@ -149,11 +137,11 @@ with st.expander("🎛️ PERSONALIZAR DISEÑO", expanded=True):
     
     simetria = st.selectbox("Tipo de Simetría", ["Caleidoscopio (Mandala)", "Repetición (Papel Pintado)", "Ajedrez Armónico"])
     
-    st.write("") # Espacio
+    st.write("") 
     if 'seed' not in st.session_state: st.session_state.seed = 0
     if st.button("Generar Nueva Obra ✨"): st.session_state.seed += 1
 
-# --- RENDERIZADO HD CON RETÍCULA FINA ---
+# --- RENDERIZADO HD CON RETÍCULA VISIBLE ---
 
 def add_tile(ax, x, y, type, rot, c_main, c_acc):
     """Dibuja una celda unitaria con bordes nítidos."""
@@ -191,13 +179,13 @@ def add_tile(ax, x, y, type, rot, c_main, c_acc):
         p1.set_transform(tr); p2.set_transform(tr)
         patch_hd(p1); patch_hd(p2)
 
-    # 3. RETÍCULA INTERIOR (MUY FINA) - Estilo técnico
+    # 3. RETÍCULA INTERIOR (AHORA MÁS VISIBLE)
     grid_line = patches.Rectangle(
         (x, y), 1, 1, 
         fill=False, 
         edgecolor='#000000', 
-        linewidth=0.15,      # Ultra fina
-        alpha=0.15,          # Muy sutil
+        linewidth=0.5,       # Grosor aumentado (antes 0.15)
+        alpha=0.4,           # Opacidad aumentada (antes 0.15)
         zorder=100,
         antialiased=True
     )
@@ -208,18 +196,16 @@ def add_tile(ax, x, y, type, rot, c_main, c_acc):
 def fill_macro_block(grid, r_start, c_start, block_size, palette):
     macro_type = random.choice(['big_diamond', 'big_x', 'concentric', 'big_circle'])
     
-    # Selección inteligente de colores para contraste
-    c1 = palette[0] # Color principal
+    # Selección inteligente de colores
+    c1 = palette[0] 
     if len(palette) > 1:
-        c2 = palette[1] # Color secundario (Negro en la paleta huevo)
+        c2 = palette[1] 
     else:
         c2 = c1
         
-    # Aleatorizar inversión de colores
     if random.random() > 0.5 and len(palette) > 1:
         c1, c2 = c2, c1
     
-    # Si la paleta tiene más colores, usarlos como acento
     accent = random.choice(palette[2:]) if len(palette) > 2 else c2
     
     for r in range(block_size):
