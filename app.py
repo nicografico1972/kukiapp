@@ -1,277 +1,273 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.transforms as transforms
 import numpy as np
 import random
 
-# --- CONFIGURACIÓN INICIAL ---
-st.set_page_config(page_title="Generador KUKI Pro", layout="wide")
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="KUKIAPP", layout="centered")
 
-# --- PALETAS DE COLOR CURADAS (Armonía garantizada) ---
+# --- CABECERA ---
+st.markdown("<h1 style='text-align: center; color: #333;'>KUKIAPP</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #666; font-style: italic;'>Patrones kukis</h3>", unsafe_allow_html=True)
+st.markdown("---")
+
+# --- PALETAS DE COLOR EXTENDIDAS ---
 PALETAS = {
-    "Clásica Portuguesa": ["#F2F2F2", "#1E4078", "#D9A404", "#8C2727"], # Blanco, Azul, Oro, Rojo oscuro
-    "Bauhaus": ["#F2F2F2", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"], # Blanco, Negro, Primarios
-    "Tierra & Oliva": ["#F0EAD6", "#556B2F", "#8B4513", "#DAA520", "#2F4F4F"],
-    "Vibrante Geométrica": ["#111111", "#FF0055", "#00DDFF", "#FFEE00", "#FFFFFF"],
-    "Monocromo Elegante": ["#FFFFFF", "#CCCCCC", "#666666", "#333333", "#000000"],
+    "Kuki Clásica (Rojo/Verde/Azul/Oro)": ["#B83328", "#3A7D44", "#2C5490", "#D89C37", "#F2ECCE"],
+    "Bauhaus (Primarios)": ["#F0F0F0", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"],
+    "Retro 70s (Naranja/Café)": ["#3B2518", "#E87A25", "#F2B83D", "#8C4926", "#F0EAD6"],
+    "Nórdico (Pastel/Gris)": ["#FFFFFF", "#2F3542", "#A4B0BE", "#FF7F50", "#7BED9F"],
+    "Midnight Neon": ["#000000", "#FF00FF", "#00FFFF", "#FFFF00", "#333333"],
+    "Tierra y Oliva": ["#F5F5DC", "#556B2F", "#8B4513", "#DAA520", "#2F4F4F"],
+    "Azulejo Portugués": ["#FFFFFF", "#003399", "#FFCC00", "#000000", "#6699FF"],
+    "Vitamina C": ["#FFFFFF", "#FF9900", "#FFCC00", "#FF3300", "#339900"]
 }
 
-# --- MOTOR DE RENDERIZADO (El corazón del dibujo) ---
+# --- LÓGICA DE DIBUJO DE BALDOSAS (EL ALFABETO GEOMÉTRICO) ---
+# Cada función dibuja una pieza básica en la coordenada (x,y) de tamaño 1x1
 
-def dibujar_modulo(ax, x, y, tipo, rotacion, colores_celda):
+def draw_tile(ax, x, y, tile_type, rotation, colors):
     """
-    Dibuja un módulo geométrico en la posición (x,y).
-    NO dibuja estrellas. Dibuja piezas básicas que FORMAN estrellas al unirse.
+    Dibuja una baldosa específica.
+    tile_type: Nombre de la forma
+    rotation: 0, 1, 2, 3 (multiplicador de 90 grados)
+    colors: Lista de colores [fondo, forma_principal, acento]
     """
-    # Fondo base de la celda
-    bg_color = colores_celda[0]
-    fg_color = colores_celda[1]
-    acc_color = colores_celda[2] if len(colores_celda) > 2 else fg_color
-    
-    # Dibujar fondo
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, color=bg_color, zorder=1))
-    
-    # Centro de rotación
-    cx, cy = x + 0.5, y + 0.5
-    trans =  plt.matplotlib.transforms.Affine2D().rotate_deg_around(cx, cy, rotacion) + ax.transData
+    bg = colors[0]
+    fg = colors[1]
+    acc = colors[2] if len(colors) > 2 else colors[1]
 
-    # --- TIPOS DE MÓDULOS (Ladrillos de construcción) ---
-    
-    if tipo == 'diagonal_simple': 
-        # Triángulo simple (mitad del cuadrado)
-        poly = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=fg_color)
-        poly.set_transform(trans)
-        ax.add_patch(poly)
+    # Crear transformación para rotación alrededor del centro de la baldosa
+    tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rotation * 90) + ax.transData
 
-    elif tipo == 'diagonal_doble': 
-        # Dos triángulos formando una flecha o punta
-        # Base
-        p1 = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=fg_color)
-        # Punta opuesta
-        p2 = patches.Polygon([(x, y+1), (x+1, y+1), (x+0.5, y+0.5)], color=acc_color)
-        p1.set_transform(trans)
-        p2.set_transform(trans)
+    # 1. Fondo base
+    ax.add_patch(patches.Rectangle((x, y), 1, 1, color=bg))
+
+    # 2. Formas
+    if tile_type == 'solid':
+        # Cuadrado sólido (solo cambia el color base si se desea, aquí es redundante pero útil para ritmo)
+        ax.add_patch(patches.Rectangle((x, y), 1, 1, color=fg))
+
+    elif tile_type == 'half_triangle':
+        # Triángulo rectángulo (mitad del cuadrado)
+        # Puntos: (x,y), (x+1, y), (x, y+1) -> Triángulo inferior izquierdo
+        p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=fg)
+        p.set_transform(tr)
+        ax.add_patch(p)
+
+    elif tile_type == 'stripes':
+        # Tres franjas
+        # Franja central
+        r = patches.Rectangle((x+0.33, y), 0.33, 1, color=fg)
+        r.set_transform(tr)
+        ax.add_patch(r)
+        
+    elif tile_type == 'quarter_circle':
+        # Cuarto de círculo (esquina)
+        w = patches.Wedge((x, y), 1, 0, 90, color=fg)
+        w.set_transform(tr)
+        ax.add_patch(w)
+
+    elif tile_type == 'frame':
+        # Cuadrado dentro de cuadrado (Concéntrico)
+        ax.add_patch(patches.Rectangle((x+0.2, y+0.2), 0.6, 0.6, color=fg))
+        ax.add_patch(patches.Rectangle((x+0.4, y+0.4), 0.2, 0.2, color=acc))
+
+    elif tile_type == 'diagonal_strip':
+        # Franja diagonal (fundamental para lazos y nudos)
+        # Polígono de 4 puntos formando una banda diagonal
+        pts = [(x, y+0.3), (x, y+0.7), (x+0.7, y), (x+0.3, y)] # Banda inferior izq
+        # Mejor hacemos banda central
+        pts = [(x, y), (x+0.3, y), (x+1, y+0.7), (x+1, y+1), (x+0.7, y+1), (x, y+0.3)]
+        # Simplificado: Triángulo grande - Triángulo pequeño? No, mejor polígono directo.
+        # Banda diagonal de esquina a esquina con grosor
+        pts = [(x, y), (x+0.4, y), (x+1, y+0.6), (x+1, y+1), (x+0.6, y+1), (x, y+0.4)]
+        p = patches.Polygon(pts, color=fg)
+        p.set_transform(tr)
+        ax.add_patch(p)
+
+    elif tile_type == 'checkers':
+        # Ajedrez 2x2
+        r1 = patches.Rectangle((x, y), 0.5, 0.5, color=fg)
+        r2 = patches.Rectangle((x+0.5, y+0.5), 0.5, 0.5, color=fg)
+        r1.set_transform(tr)
+        r2.set_transform(tr)
+        ax.add_patch(r1)
+        ax.add_patch(r2)
+
+    elif tile_type == 'triangle_center':
+        # Triángulo apuntando al centro
+        p = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=fg)
+        p.set_transform(tr)
+        ax.add_patch(p)
+        
+    elif tile_type == 'bow':
+        # Dos triángulos opuestos (reloj de arena)
+        p1 = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=fg)
+        p2 = patches.Polygon([(x, y+1), (x+1, y+1), (x+0.5, y+0.5)], color=acc)
+        p1.set_transform(tr)
+        p2.set_transform(tr)
         ax.add_patch(p1)
         ax.add_patch(p2)
 
-    elif tipo == 'arco': 
-        # Cuarto de círculo (Esencial para azulejo portugués)
-        wedge = patches.Wedge((x, y), 1, 0, 90, color=fg_color)
-        wedge.set_transform(trans)
-        ax.add_patch(wedge)
+# --- GENERADOR DE PATRÓN (Cerebro) ---
+
+def generate_mandala_grid(size, n_colors, palette):
+    """
+    Genera la estructura de datos para un mandala simétrico.
+    Estrategia: Generar semilla (Top-Left) y reflejar.
+    """
+    seed_size = size // 2
+    # Tipos de baldosas disponibles con pesos (algunas son más comunes en tus ejemplos)
+    tile_types = ['solid', 'half_triangle', 'half_triangle', 'quarter_circle', 
+                  'frame', 'stripes', 'diagonal_strip', 'checkers', 'triangle_center', 'bow']
+    
+    # 1. Crear Semilla (Top-Left)
+    seed_grid = []
+    for _ in range(seed_size):
+        row = []
+        for _ in range(seed_size):
+            tile = random.choice(tile_types)
+            rot = random.randint(0, 3)
+            # Elegir colores para esta baldosa
+            # Asegurar contraste: bg != fg
+            cols = random.sample(palette[:n_colors], k=min(3, n_colors))
+            while len(cols) < 3: cols.append(cols[0]) # Rellenar si faltan
+            
+            row.append({'type': tile, 'rot': rot, 'cols': cols})
+        seed_grid.append(row)
         
-    elif tipo == 'arco_doble':
-        # Dos arcos opuestos (crea formas de hoja/ojo al juntarse)
-        w1 = patches.Wedge((x, y), 1, 0, 90, color=fg_color)
-        w2 = patches.Wedge((x+1, y+1), 1, 180, 270, color=acc_color)
-        w1.set_transform(trans)
-        w2.set_transform(trans)
-        ax.add_patch(w1)
-        ax.add_patch(w2)
-
-    elif tipo == 'diamante_centro':
-        # Rombo en el centro (o cuadrado girado)
-        poly = patches.Polygon([(x+0.5, y), (x+1, y+0.5), (x+0.5, y+1), (x, y+0.5)], color=fg_color)
-        # Si rotamos esto, sigue siendo un rombo, pero añade variedad si se combina
-        # Añadimos un centro pequeño
-        rect = patches.Rectangle((x+0.4, y+0.4), 0.2, 0.2, color=acc_color)
-        ax.add_patch(poly)
-        ax.add_patch(rect)
-
-    elif tipo == 'rayas':
-        # Geometría lineal
-        r1 = patches.Rectangle((x, y), 0.33, 1, color=fg_color)
-        r2 = patches.Rectangle((x+0.66, y), 0.33, 1, color=fg_color)
-        r1.set_transform(trans)
-        r2.set_transform(trans)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
-
-    elif tipo == 'cruz_suiza':
-        # Cruz gruesa
-        r1 = patches.Rectangle((x+0.33, y), 0.33, 1, color=fg_color)
-        r2 = patches.Rectangle((x, y+0.33), 1, 0.33, color=fg_color)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
-
-# --- LÓGICA DE GENERACIÓN ---
-
-def generar_semilla(tamano_semilla, paleta_actual):
-    """Genera el bloque base (cuadrante superior izquierdo)"""
-    semilla = []
-    # Definimos pesos para que haya más formas curvas y diagonales (más rico)
-    tipos_disponibles = ['diagonal_simple', 'diagonal_doble', 'arco', 'arco_doble', 'diamante_centro', 'rayas', 'cruz_suiza']
-    pesos = [25, 20, 20, 15, 10, 5, 5] 
+    # 2. Construir Grid Completo mediante Reflejos
+    full_grid = [[None for _ in range(size)] for _ in range(size)]
     
-    for _ in range(tamano_semilla):
-        fila = []
-        for _ in range(tamano_semilla):
-            tipo = random.choices(tipos_disponibles, weights=pesos, k=1)[0]
-            rot = random.choice([0, 90, 180, 270])
-            # Elegir 3 colores aleatorios de la paleta para esta celda
-            cols = random.sample(paleta_actual, k=min(3, len(paleta_actual)))
-            # Rellenar si faltan colores
-            while len(cols) < 3: cols.append(cols[0])
+    # Llenar cuadrantes
+    for r in range(seed_size):
+        for c in range(seed_size):
+            # Original (Top-Left)
+            cell = seed_grid[r][c]
+            full_grid[r][c] = cell
             
-            fila.append({'tipo': tipo, 'rot': rot, 'cols': cols})
-        semilla.append(fila)
-    return semilla
+            # --- REFLEJO HORIZONTAL (Top-Right) ---
+            # Al reflejar horizontalmente, la forma geométrica cambia de orientación.
+            # En matplotlib, podemos manejar esto, pero aquí ajustamos la lógica de 'rotación'
+            # para formas simples.
+            
+            # Copia profunda de la celda
+            tr_cell = cell.copy()
+            # Lógica de espejo para rotación:
+            # Si rot=0 (abajo-izq) -> espejo -> abajo-der (rot=1 para half_tri)
+            # Esto es complejo de calcular para cada forma, así que usaremos
+            # TRANSFORMACIÓN DE ESCALA (-1, 1) en el renderizado.
+            # Solo guardamos que es un espejo.
+            tr_cell['mirror_x'] = True
+            full_grid[r][size - 1 - c] = tr_cell
+            
+            # --- REFLEJO VERTICAL (Bottom-Left) ---
+            bl_cell = cell.copy()
+            bl_cell['mirror_y'] = True
+            full_grid[size - 1 - r][c] = bl_cell
+            
+            # --- REFLEJO DOBLE (Bottom-Right) ---
+            br_cell = cell.copy()
+            br_cell['mirror_x'] = True
+            br_cell['mirror_y'] = True
+            full_grid[size - 1 - r][size - 1 - c] = br_cell
+            
+    return full_grid
 
-def aplicar_simetria_completa(semilla):
-    """Crea el efecto 'Figura Completa' reflejando la semilla"""
-    N_semilla = len(semilla)
-    N_total = N_semilla * 2
-    grid = [[None]*N_total for _ in range(N_total)]
+# --- RENDERIZADO ---
 
-    for r in range(N_semilla):
-        for c in range(N_semilla):
-            celda = semilla[r][c]
-            
-            # --- Lógica de Espejos ---
-            # 1. Top-Left (Original)
-            grid[r][c] = celda
-            
-            # 2. Top-Right (Reflejo Horizontal)
-            # Al reflejar horizontalmente, la rotación cambia:
-            # 0->90 (si es diagonal), o lógica de espejo visual.
-            # Simplificación efectiva para patches: Flip geométrico = Cambio de rotación + Tipo
-            # Para mantener la continuidad visual perfecta, simplemente rotamos "hacia adentro"
-            
-            # TRUCO PRO: Para hacer formas cerradas (estrellas centrales), rotamos alrededor del centro del mural
-            c_tr = celda.copy()
-            c_tr['rot'] = (celda['rot'] + 90) % 360 # Rotación simple para caleidoscopio
-            grid[r][N_total - 1 - c] = c_tr # Esta posición es espejo, pero rotamos la pieza
-            
-            # Ajuste Fino para "Espejo Real" vs "Rotación":
-            # Si queremos que las líneas se toquen, a veces es mejor reflejar la geometría.
-            # Aquí usaremos ROTACIÓN CALEIDOSCÓPICA que garantiza simetría central (mandala)
-            
-            # Recalculamos usando lógica de mandala (rotar la semilla 4 veces)
-            pass 
-
-    # RE-HACEMOS LA LÓGICA MANDALA (Más robusta para "Figuras Completas")
-    # Cuadrante 1: Semilla
-    # Cuadrante 2: Semilla rotada 90 grados
-    # Cuadrante 3: Semilla rotada 180 grados
-    # Cuadrante 4: Semilla rotada 270 grados
-    
-    # Pero cuidado, para que conecten los bordes internos, hay que reflejar, no solo rotar.
-    
-    # 1. Top-Left: Semilla
-    for r in range(N_semilla):
-        for c in range(N_semilla):
-            grid[r][c] = semilla[r][c]
-    
-    # 2. Top-Right: Espejo Horizontal de Top-Left
-    for r in range(N_semilla):
-        for c in range(N_semilla):
-            orig = grid[r][c]
-            nuevo = orig.copy()
-            # Ajuste de rotación para efecto espejo horizontal
-            if orig['tipo'] in ['diagonal_simple', 'arco']:
-                 if orig['rot'] == 0: nuevo['rot'] = 90
-                 elif orig['rot'] == 90: nuevo['rot'] = 0
-                 elif orig['rot'] == 180: nuevo['rot'] = 270
-                 elif orig['rot'] == 270: nuevo['rot'] = 180
-            elif orig['tipo'] == 'diagonal_doble':
-                 if orig['rot'] == 0: nuevo['rot'] = 270 # Ajuste visual
-                 # ... simplificamos:
-                 nuevo['rot'] = (orig['rot'] + 90) % 360 # Fallback
-            
-            grid[r][N_total - 1 - c] = nuevo
-
-    # 3. Bottom: Espejo Vertical de Top
-    for r in range(N_semilla):
-        for c in range(N_total):
-            orig = grid[r][c]
-            nuevo = orig.copy()
-            # Ajuste rotación vertical
-            if orig['tipo'] in ['diagonal_simple', 'arco']:
-                if orig['rot'] == 0: nuevo['rot'] = 270
-                elif orig['rot'] == 90: nuevo['rot'] = 180
-                elif orig['rot'] == 180: nuevo['rot'] = 90
-                elif orig['rot'] == 270: nuevo['rot'] = 0
-            
-            grid[N_total - 1 - r][c] = nuevo
-            
-    return grid
-
-def generar_abstraccion(tamano, paleta):
-    """Genera un patrón sin centro único, pero con ritmo armónico"""
-    grid = [[None]*tamano for _ in range(tamano)]
-    
-    # Elegir 2 o 3 módulos "tema" para que no sea un caos
-    temas = random.sample(['arco', 'diagonal_doble', 'diagonal_simple', 'rayas'], k=2)
-    
-    for r in range(tamano):
-        for c in range(tamano):
-            tipo = random.choice(temas)
-            # Rotación: A veces aleatoria, a veces basada en paridad (tablero de ajedrez) para dar orden
-            if random.random() > 0.3:
-                rot = ((r + c) % 2) * 90 # Orden latente
-            else:
-                rot = random.choice([0, 90, 180, 270]) # Variación
-            
-            cols = random.sample(paleta, k=2)
-            cols.append(cols[0])
-            grid[r][c] = {'tipo': tipo, 'rot': rot, 'cols': cols}
-            
-    return grid
-
-# --- INTERFAZ UI ---
-
-col1, col2 = st.columns([1, 3])
-
-with col1:
-    st.header("Control Creativo")
-    modo = st.radio("Modo de Diseño", ["Gran Figura (Mandala)", "Abstracción Armónica"])
-    
-    paleta_nombre = st.selectbox("Paleta de Color", list(PALETAS.keys()))
-    paleta_actual = PALETAS[paleta_nombre]
-    
-    tamano = st.slider("Complejidad (Tamaño Grid)", 4, 16, 8, step=2)
-    
-    if "seed" not in st.session_state: st.session_state.seed = 0
-    
-    if st.button("🎲 GENERAR NUEVO DISEÑO", type="primary"):
-        st.session_state.seed += 1
-
-with col2:
-    # Generar datos
-    random.seed(st.session_state.seed)
-    
-    if modo == "Gran Figura (Mandala)":
-        semilla = generar_semilla(tamano // 2, paleta_actual)
-        grid_final = aplicar_simetria_completa(semilla)
-        titulo = "Composición Simétrica Central"
-    else:
-        grid_final = generar_abstraccion(tamano, paleta_actual)
-        titulo = "Abstracción Modular Rítmica"
-
-    # DIBUJAR
-    fig, ax = plt.subplots(figsize=(10, 10))
+def render_kuki_pattern(grid, size):
+    fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_aspect('equal')
     ax.axis('off')
     
-    N = len(grid_final)
-    # Fondo del lienzo
-    fig.patch.set_facecolor('#222222')
-    ax.add_patch(patches.Rectangle((0, 0), N, N, color=paleta_actual[0])) # Fondo base
+    # Fondo global (opcional, por si quedan huecos)
+    # ax.add_patch(patches.Rectangle((0,0), size, size, color='#ffffff'))
 
-    for r in range(N):
-        for c in range(N):
-            celda = grid_final[r][c]
-            # Invertimos Y para dibujar de arriba a abajo
-            dibujar_modulo(ax, c, N-1-r, celda['tipo'], celda['rot'], celda['cols'])
+    for r in range(size):
+        for c in range(size):
+            cell = grid[r][c]
+            # Coordenadas (Y invertida para dibujar de arriba a abajo)
+            x_pos = c
+            y_pos = size - 1 - r
+            
+            # Guardamos el estado actual de transformación
+            
+            # Aplicar espejos si es necesario mediante escala negativa
+            # Esto requiere un truco: trasladar al origen, escalar, trasladar de vuelta.
+            # Para simplificar con Matplotlib patches:
+            
+            # Calculamos la rotación base
+            rot = cell['rot']
+            
+            # Ajuste de rotación manual para simular espejo si no usamos escala
+            # Si es espejo X: 0->1, 1->0, 2->3, 3->2 (para triangulos básicos)
+            # Vamos a dibujar normal y dejar que draw_tile maneje la rotación, 
+            # pero necesitamos ajustar la rotación según el cuadrante para simular simetría caleidoscópica
+            
+            # TRUCO: Modificar la rotación efectiva según los flags de espejo
+            # Esto funciona perfecto para formas simétricas o direccionales simples
+            if cell.get('mirror_x'):
+                if rot == 0: rot = 1
+                elif rot == 1: rot = 0
+                elif rot == 2: rot = 3
+                elif rot == 3: rot = 2
+            
+            if cell.get('mirror_y'):
+                # Invertir verticalmente
+                if rot == 0: rot = 3
+                elif rot == 1: rot = 2
+                elif rot == 2: rot = 1
+                elif rot == 3: rot = 0
+                
+            draw_tile(ax, x_pos, y_pos, cell['type'], rot, cell['cols'])
+
+    # Marco exterior grueso (Estilo Kuki)
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#222', linewidth=4)
     
-    # Líneas de rejilla sutiles
-    for i in range(N+1):
-        ax.plot([0, N], [i, i], color='black', linewidth=0.5, alpha=0.3)
-        ax.plot([i, i], [0, N], color='black', linewidth=0.5, alpha=0.3)
+    # Líneas de cuadrícula sutiles
+    for i in range(size + 1):
+        ax.plot([0, size], [i, i], color='#000', linewidth=0.5, alpha=0.1)
+        ax.plot([i, i], [0, size], color='#000', linewidth=0.5, alpha=0.1)
         
-    # Marco exterior
-    ax.plot([0, N, N, 0, 0], [0, 0, N, N, 0], color='black', linewidth=5)
+    return fig
 
-    st.pyplot(fig)
-    
-    st.caption(f"🎨 {titulo} | Paleta: {paleta_nombre}")
+# --- INTERFAZ LATERAL ---
+
+st.sidebar.header("Configuración de Diseño")
+
+paleta_nombre = st.sidebar.selectbox("Selecciona Paleta", list(PALETAS.keys()))
+paleta_seleccionada = PALETAS[paleta_nombre]
+
+n_colores = st.sidebar.slider("Cantidad de Colores", 2, 5, 4)
+grid_size = st.sidebar.select_slider("Complejidad (Tamaño Grid)", options=[4, 6, 8, 12], value=6)
+
+if 'seed' not in st.session_state:
+    st.session_state.seed = 0
+
+if st.sidebar.button("🎲 GENERAR NUEVO PATRÓN", type="primary"):
+    st.session_state.seed += 1
+
+# --- EJECUCIÓN ---
+
+random.seed(st.session_state.seed)
+
+# Generar y mostrar
+grid_data = generate_mandala_grid(grid_size, n_colores, paleta_seleccionada)
+fig = render_kuki_pattern(grid_data, grid_size)
+
+st.pyplot(fig)
+
+# Botón de descarga
+from io import BytesIO
+buf = BytesIO()
+fig.savefig(buf, format="png", bbox_inches='tight', dpi=300)
+st.download_button(
+    label="⬇️ Descargar Imagen en Alta Calidad",
+    data=buf.getvalue(),
+    file_name="patron_kuki.png",
+    mime="image/png"
+)
