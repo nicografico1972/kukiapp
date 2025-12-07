@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import numpy as np
+import random
 from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="PATRONES INFINITOS", layout="centered")
 
-# --- ESTILOS CSS (UI MINIMALISTA & MODERNA) ---
+# --- ESTILOS CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -35,7 +36,6 @@ st.markdown("""
         margin-bottom: 3rem; letter-spacing: 0.5px;
     }
 
-    /* Expander Minimalista */
     .streamlit-expanderHeader {
         background-color: #f9f9f9;
         border: 1px solid #eee;
@@ -67,25 +67,24 @@ st.markdown("""
         color: #fff; 
         padding: 16px 0px; 
         transition: all 0.2s ease;
+        cursor: pointer;
     }
     
     div.stButton > button:hover { 
         background-color: #333;
         transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    div.stButton > button:active {
+        transform: translateY(1px);
+        box-shadow: none;
     }
 
-    /* Ajuste de Inputs */
+    /* Inputs */
     .stSelectbox label, .stMultiSelect label, .stSlider label {
         font-weight: 600;
         color: #444;
         font-size: 0.9em;
-    }
-    
-    /* Etiquetas de formas */
-    .shape-label {
-        font-family: monospace;
-        margin-right: 8px;
-        font-size: 1.1em;
     }
 
     [data-testid="stSidebar"] { display: none; }
@@ -97,7 +96,7 @@ st.markdown("""
 st.markdown("<h1>PATRONES INFINITOS</h1>", unsafe_allow_html=True)
 st.markdown("<p class='author'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
-# --- DEFINICIÓN DE FORMAS (SIN EMOJIS, SÍMBOLOS MINIMALISTAS) ---
+# --- DEFINICIÓN DE FORMAS ---
 FORMAS_DISPONIBLES = {
     "△ Triángulos": "triangle",
     "◑ Curvas": "quarter_circle",
@@ -109,7 +108,7 @@ FORMAS_DISPONIBLES = {
     "■ Sólidos": "solid"
 }
 
-# --- PALETAS (SIN EMOJIS) ---
+# --- PALETAS ---
 PALETAS = {
     "Amarillo & Negro": ["#FFC300", "#000000"], 
     "Arquitecto (Grises)": ["#000000", "#333333", "#777777", "#BBBBBB", "#FFFFFF"],
@@ -140,7 +139,6 @@ with st.expander("⚙ CONFIGURACIÓN", expanded=True):
     p_name = st.selectbox("Paleta de Color", list(PALETAS.keys()))
     paleta_actual = PALETAS[p_name]
     
-    # Preview Color Minimalista
     cols = st.columns(len(paleta_actual))
     for i, c in enumerate(cols):
         c.markdown(f"<div style='background-color:{paleta_actual[i]};height:12px;width:100%;border-radius:2px;'></div>", unsafe_allow_html=True)
@@ -150,7 +148,6 @@ with st.expander("⚙ CONFIGURACIÓN", expanded=True):
     # 2. ESTRUCTURA
     col_a, col_b = st.columns(2)
     with col_a:
-        # Nombres limpios para los modos
         modo = st.selectbox("Modo de Patrón", ["Repetición (Secuencial)", "Caleidoscopio (Reflejo)"])
     with col_b:
         grid_size = st.select_slider("Resolución", options=[4, 8, 12, 16, 20, 24], value=12)
@@ -170,15 +167,21 @@ with st.expander("⚙ CONFIGURACIÓN", expanded=True):
         )
         formas_seleccionadas = [FORMAS_DISPONIBLES[k] for k in seleccion]
         if not formas_seleccionadas:
-            formas_seleccionadas = ['solid'] # Fallback
+            formas_seleccionadas = ['solid']
     else:
-        # En modo caleidoscopio, usamos una selección predefinida para asegurar buen resultado
         st.caption("Se utilizará una selección optimizada de formas para el caleidoscopio.")
         formas_seleccionadas = ['triangle', 'quarter_circle', 'bow', 'strip', 'diamond']
 
     st.write("") 
-    # Botón sin emoji
-    if st.button("GENERAR PATRÓN"): pass
+    
+    # --- LOGICA DEL BOTÓN CORREGIDA ---
+    # Inicializamos el estado de la semilla si no existe
+    if 'seed' not in st.session_state:
+        st.session_state.seed = 0
+        
+    # El botón simplemente incrementa el contador
+    if st.button("GENERAR PATRÓN"):
+        st.session_state.seed += 1
 
 # --- MOTOR DE RENDERIZADO HD ---
 
@@ -188,10 +191,10 @@ def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
     def patch(p):
         p.set_antialiased(False); p.set_linewidth(0); ax.add_patch(p)
 
-    # 1. Fondo base (Blanco)
+    # 1. Fondo base
     patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF')) 
     
-    # 2. Formas (CORREGIDAS PARA NO SALIRSE)
+    # 2. Formas
     if type == 'solid':
         patch(patches.Rectangle((x, y), 1, 1, color=c_main))
     elif type == 'triangle': 
@@ -201,7 +204,6 @@ def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
         w = patches.Wedge((x, y), 1, 0, 90, color=c_main)
         w.set_transform(tr); patch(w)
     elif type == 'strip': 
-        # Banda horizontal centrada (se mantiene dentro)
         r = patches.Rectangle((x, y+0.25), 1, 0.5, color=c_main)
         r.set_transform(tr); patch(r)
     elif type == 'circle':
@@ -217,69 +219,78 @@ def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
         p = patches.Polygon([(x+0.5, y), (x+1, y+0.5), (x+0.5, y+1), (x, y+0.5)], color=c_main)
         patch(p)
 
-    # 3. RETÍCULA INTERIOR (FINA Y SUTIL)
+    # 3. RETÍCULA INTERIOR (Ajustada para verse bien)
     grid_line = patches.Rectangle(
         (x, y), 1, 1, fill=False, 
-        edgecolor='#000000', linewidth=0.25, alpha=0.2, zorder=100, antialiased=True
+        edgecolor='#000000', linewidth=0.5, alpha=0.15, zorder=100, antialiased=True
     )
     ax.add_patch(grid_line)
 
-# --- GENERACIÓN DE PATRONES LÓGICOS (SIN ANARQUÍA) ---
+# --- GENERACIÓN DE PATRONES LÓGICOS + VARIACIÓN CONTROLADA ---
 
 def generate_logical_pattern(size, palette, mode, allowed_shapes):
+    # Aquí está la magia: Usamos la semilla del botón para BARAJAR las reglas
+    # pero no para tomar decisiones pixel a pixel.
+    
+    # 1. Configurar generador local con la semilla actual
+    rng = random.Random(st.session_state.seed)
+    
+    # 2. Barajar los ingredientes (Esto cambia el diseño al pulsar el botón)
+    # Hacemos copias para no alterar los originales
+    current_shapes = allowed_shapes.copy()
+    current_palette = palette.copy()
+    
+    rng.shuffle(current_shapes) # Cambia el orden de las formas
+    rng.shuffle(current_palette) # Cambia qué color es el dominante
+    
+    # Parámetros aleatorios globales para esta "tirada"
+    rotation_offset = rng.randint(0, 3) 
+    pattern_shift = rng.randint(0, 10)
+    
     grid = [[None for _ in range(size)] for _ in range(size)]
-    num_shapes = len(allowed_shapes)
-    num_colors = len(palette)
+    num_shapes = len(current_shapes)
+    num_colors = len(current_palette)
     
     if mode == "Repetición (Secuencial)":
-        # Lógica secuencial determinista basada en coordenadas
         for r in range(size):
             for c in range(size):
-                # 1. Selección de Forma: Secuencia diagonal
-                # Crea franjas diagonales alternando las formas seleccionadas
-                shape_idx = (r + c) % num_shapes
-                tipo = allowed_shapes[shape_idx]
+                # Usamos los ingredientes BARAJADOS pero con lógica matemática
                 
-                # 2. Rotación: Patrón de damero
-                # Alterna rotación 0 y 90 grados
-                rot = (r + c) % 2
+                # Selección de Forma: Secuencia diagonal + desplazamiento
+                shape_idx = (r + c + pattern_shift) % num_shapes
+                tipo = current_shapes[shape_idx]
                 
-                # 3. Color: Secuencia basada en filas
-                # Cambia de color principal cada fila
+                # Rotación: Patrón de damero + offset aleatorio global
+                rot = ((r + c) % 2 + rotation_offset) % 4
+                
+                # Color: Secuencia basada en filas
                 c1_idx = r % num_colors
-                c1 = palette[c1_idx]
-                
-                # Color de acento: El siguiente en la paleta
-                c2 = palette[(c1_idx + 1) % num_colors]
+                c1 = current_palette[c1_idx]
+                c2 = current_palette[(c1_idx + 1) % num_colors]
                 
                 grid[r][c] = {'type': tipo, 'rot': rot, 'c_main': c1, 'c_acc': c2}
 
-    else: 
-        # MODO CALEIDOSCOPIO (Reflejo)
-        # Generar semilla determinista
+    else: # Caleidoscopio
         seed_size = size // 2
         for r in range(seed_size):
             for c in range(seed_size):
-                # Lógica simple para la semilla: forma basada en columna, color en fila
-                shape_idx = c % num_shapes
-                tipo = allowed_shapes[shape_idx]
-                rot = (r * c) % 4 # Rotación variable pero determinista
-                c1 = palette[r % num_colors]
-                c2 = palette[(r+1) % num_colors]
+                # Lógica determinista pero con parámetros barajados
+                shape_idx = (c + pattern_shift) % num_shapes
+                tipo = current_shapes[shape_idx]
+                
+                # Rotación matemática basada en coordenadas
+                rot = (r * c + rotation_offset) % 4
+                
+                c1 = current_palette[r % num_colors]
+                c2 = current_palette[(r+1) % num_colors]
                 
                 cell = {'type': tipo, 'rot': rot, 'c_main': c1, 'c_acc': c2}
                 
-                # Aplicar espejos
-                grid[r][c] = cell # Top-Left
-                
-                tr = cell.copy(); tr['mirror_x'] = True
-                grid[r][size-1-c] = tr # Top-Right
-                
-                bl = cell.copy(); bl['mirror_y'] = True
-                grid[size-1-r][c] = bl # Bot-Left
-                
-                br = cell.copy(); br['mirror_x'] = True; br['mirror_y'] = True
-                grid[size-1-r][size-1-c] = br # Bot-Right
+                # Espejos
+                grid[r][c] = cell 
+                tr = cell.copy(); tr['mirror_x'] = True; grid[r][size-1-c] = tr 
+                bl = cell.copy(); bl['mirror_y'] = True; grid[size-1-r][c] = bl 
+                br = cell.copy(); br['mirror_x'] = True; br['mirror_y'] = True; grid[size-1-r][size-1-c] = br 
 
     return grid
 
@@ -295,25 +306,23 @@ def render_final(grid, size):
             x, y = c, size - 1 - r
             rot = cell['rot']
             
-            # Ajuste de rotación para espejos (Solo afecta a Caleidoscopio)
             if cell.get('mirror_x'): rot = {0:1, 1:0, 2:3, 3:2}.get(rot, rot)
             if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}.get(rot, rot)
             
             add_tile_hd(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    # Marco Exterior Minimalista
     ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
     return fig
 
 # --- EJECUCIÓN ---
-# No necesitamos seed aleatoria, la lógica es determinista basada en los controles.
 
+# Generamos usando la semilla del estado
 grid_data = generate_logical_pattern(grid_size, paleta_actual, modo, formas_seleccionadas)
 figura = render_final(grid_data, grid_size)
 
 st.pyplot(figura)
 
-# Botón de descarga sin emoji
+# Botón de descarga
 buf = BytesIO()
 figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
 st.download_button(label="DESCARGAR IMAGEN HD", data=buf.getvalue(), file_name="patron.png", mime="image/png")
