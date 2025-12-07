@@ -6,269 +6,271 @@ import numpy as np
 import random
 from io import BytesIO
 
-# --- CONFIGURACIÓN ---
-st.set_page_config(page_title="NICOART QUANTUM", layout="centered")
+# --- CONFIGURACION ---
+st.set_page_config(page_title="NICOART SYSTEMIC", layout="centered")
 
-# --- ESTILOS CSS (TECH-MINIMAL) ---
+# --- ESTILOS CSS (TECH-NOIR / SIN EMOJIS) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
     
-    .stApp { background-color: #0e0e0e; font-family: 'Inter', sans-serif; color: #fff; }
+    .stApp { background-color: #f0f0f0; font-family: 'JetBrains Mono', monospace; color: #111; }
     
     h1 { 
-        font-family: 'Syncopate', sans-serif; font-weight: 700; letter-spacing: 2px; 
-        color: #fff; text-align: center; text-transform: uppercase; font-size: 2.5rem; margin: 0; 
-        text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        font-weight: 700; letter-spacing: -2px; color: #000; 
+        text-align: center; text-transform: uppercase; font-size: 3rem; margin: 0; 
     }
     .author { 
-        text-align: center; color: #666; font-size: 0.7em; letter-spacing: 3px; 
-        margin-bottom: 40px; text-transform: uppercase; 
+        text-align: center; color: #666; font-size: 0.7em; 
+        letter-spacing: 2px; margin-bottom: 40px; text-transform: uppercase;
     }
     
-    /* Panel de Control Oscuro */
+    /* Panel de Control */
     .streamlit-expanderHeader { 
-        background: #1a1a1a; border: 1px solid #333; color: #fff; 
-        font-weight: 600; border-radius: 4px; font-family: 'Inter', sans-serif;
+        background: #fff; border: 1px solid #000; color: #000; 
+        font-weight: 700; border-radius: 0px; font-family: 'JetBrains Mono', monospace;
     }
     .streamlit-expanderContent { 
-        border: 1px solid #333; border-top: 0; background: #111; padding: 20px; 
+        border: 1px solid #000; border-top: 0; background: #fff; padding: 20px; 
     }
     
-    /* Selectores Dark Mode */
-    div[data-baseweb="select"] > div { background-color: #222; color: #fff; border-color: #444; }
-    
-    /* Botón Quantum */
+    /* Boton */
     div.stButton > button { 
-        width: 100%; background: linear-gradient(45deg, #FFD700, #FFAA00); 
-        color: #000; border: none; border-radius: 4px; 
-        font-weight: 800; font-size: 16px; padding: 20px; letter-spacing: 2px;
-        transition: all 0.3s; text-transform: uppercase; font-family: 'Syncopate', sans-serif;
+        width: 100%; background: #000; color: #fff; border: none; border-radius: 0px; 
+        font-weight: 700; font-size: 16px; padding: 20px; letter-spacing: 2px;
+        transition: all 0.2s; font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
     }
     div.stButton > button:hover { 
-        transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); 
+        background: #333; transform: translateY(-2px); 
     }
     
     [data-testid="stSidebar"] { display: none; }
     .block-container { padding-top: 2rem; max-width: 800px; }
-    
-    /* Textos */
-    p, label { color: #ccc !important; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- CABECERA ---
 st.markdown("<h1>NICOART</h1>", unsafe_allow_html=True)
-st.markdown("<p class='author'>Quantum Pattern Engine</p>", unsafe_allow_html=True)
+st.markdown("<p class='author'>Systemic Pattern Generator</p>", unsafe_allow_html=True)
 
-# --- PALETAS PREMIUM ---
+# --- PALETAS ---
 PALETAS = {
-    "GOLD & ONYX": ["#FFD700", "#080808", "#1A1A1A", "#333333"], 
-    "CELTIC RED": ["#F2ECCE", "#D92B2B", "#050505", "#E6AF2E"],
-    "BAUHAUS DARK": ["#E5E5E5", "#111111", "#D92B2B", "#1A4780"],
-    "NEON MATRIX": ["#000000", "#00FF41", "#003B00", "#0D0208"],
-    "VINTAGE QUILT": ["#F0EAD6", "#3B2518", "#E87A25", "#8C4926"],
-    "OCEANIC": ["#001219", "#94D2BD", "#0A9396", "#005F73"],
+    "AMARILLO & NEGRO": ["#FFD700", "#000000"], 
+    "CELTA ROJO": ["#F2ECCE", "#D92B2B", "#111111", "#E6AF2E"],
+    "BAUHAUS": ["#F0F0F0", "#111111", "#D92B2B", "#1A4780", "#E6AF2E"],
+    "MATRIX": ["#000000", "#00FF41", "#003B00", "#0D0208"],
+    "QUILT VINTAGE": ["#F0EAD6", "#3B2518", "#E87A25", "#8C4926"],
+    "OCEANICO": ["#001219", "#94D2BD", "#0A9396", "#005F73"],
 }
 
 # --- CONTROLES ---
-with st.expander("SYSTEM CONTROL", expanded=True):
+with st.expander("SISTEMA DE CONTROL", expanded=True):
     c1, c2 = st.columns([2, 1])
     with c1:
-        p_name = st.selectbox("PALETTE", list(PALETAS.keys()), label_visibility="collapsed")
+        p_name = st.selectbox("PALETA", list(PALETAS.keys()), label_visibility="collapsed")
         paleta = PALETAS[p_name]
         cols = st.columns(len(paleta))
         for i, c in enumerate(cols):
-            c.markdown(f"<div style='background:{paleta[i]};height:8px;width:100%'></div>", unsafe_allow_html=True)
+            c.markdown(f"<div style='background:{paleta[i]};height:10px;width:100%'></div>", unsafe_allow_html=True)
     with c2:
-        # Estilo visual de la línea
-        estilo_linea = st.selectbox("LINE STYLE", ["Cinta Plana (Flat)", "Tubular (3D)", "Outline (Borde)"])
+        # Selector de motor
+        motor = st.selectbox("ALGORITMO", ["Nudos Procedurales (Infinito)", "Geometria Modular (Quilt)"])
 
     st.write("")
     c3, c4 = st.columns(2)
     with c3:
-        # Esto controla el tamaño del Grid (8x8, 16x16)
-        grid_size = st.select_slider("GRID RESOLUTION", options=[4, 6, 8, 12, 16, 20], value=8)
+        grid_size = st.select_slider("RESOLUCION DE RETICULA", options=[4, 6, 8, 12, 16, 20], value=8)
     with c4:
-        # Esto controla cuánto se "rompe" la retícula para formar curvas
-        # 0 = Todo cruces (Rejilla), 1 = Todo curvas (Círculos)
-        caos = st.slider("ENTROPY (Curvature)", 0.0, 1.0, 0.6)
+        if motor == "Nudos Procedurales (Infinito)":
+            # Control de entropía para los nudos
+            caos = st.slider("COMPLEJIDAD DE TRAMA", 0.0, 1.0, 0.6)
+        else:
+            modo_geo = st.selectbox("PATRON", ["Secuencia Logica", "Super-Modulo 4x4"])
 
     st.write("")
     if 'seed' not in st.session_state: st.session_state.seed = 0
-    if st.button("MUTATE PATTERN"): st.session_state.seed += 1
+    if st.button("EJECUTAR GENERACION"): st.session_state.seed += 1
 
-# --- MOTOR DE RENDERIZADO PROCEDURAL ---
+# --- ALFABETO VISUAL PARA NUDOS (TRUCHET TILES) ---
 
-def draw_proc_tile(ax, x, y, type, rot, c_bg, c_tape, c_out, style):
+def draw_proc_tile(ax, x, y, type, rot, c_bg, c_tape, c_out):
     """
-    Dibuja una pieza del nudo basada en su tipo lógico.
+    Dibuja una pieza del nudo basada en su tipo logico.
     """
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
     
-    # Configuración de grosores según estilo
-    w_tape = 0.35
-    w_border = 0.05
+    w_tape = 0.35 # Ancho cinta
+    w_border = 0.05 # Ancho borde
     
     def p(patch): 
-        patch.set_antialiased(False) # Sharp edges
+        patch.set_antialiased(False) # Bordes duros
         patch.set_linewidth(0)
         ax.add_patch(patch)
 
     # 1. Fondo
     p(patches.Rectangle((x, y), 1, 1, color=c_bg))
 
-    # --- GEOMETRÍA DE LA CINTA ---
+    # --- GEOMETRIA ---
     patches_list = []
     
     if type == 'cross':
         # Cruce (+)
-        # Pieza vertical (Abajo)
+        # Borde Vertical
+        patches_list.append(patches.Rectangle((x + 0.5 - w_tape/2 - w_border, y), w_tape + w_border*2, 1, color=c_out))
+        # Cinta Vertical
         patches_list.append(patches.Rectangle((x + 0.5 - w_tape/2, y), w_tape, 1, color=c_tape))
-        # Pieza horizontal (Arriba)
-        patches_list.append(patches.Rectangle((x, y + 0.5 - w_tape/2), 1, w_tape, color=c_tape))
         
-        # Si es outline, añadimos bordes negros
-        if style == "Outline (Borde)":
-             # Borde Vertical
-             patches_list.insert(0, patches.Rectangle((x + 0.5 - w_tape/2 - w_border, y), w_tape + w_border*2, 1, color=c_out))
-             # Borde Horizontal (Cortado para efecto over/under)
-             # Para simular cruce, pintamos el borde horizontal encima, pero dejando hueco?
-             # Simplificación: Pintamos borde horizontal completo
-             patches_list.insert(2, patches.Rectangle((x, y + 0.5 - w_tape/2 - w_border), 1, w_tape + w_border*2, color=c_out))
+        # Borde Horizontal (Cruce)
+        patches_list.append(patches.Rectangle((x, y + 0.5 - w_tape/2 - w_border), 1, w_tape + w_border*2, color=c_out))
+        # Cinta Horizontal
+        patches_list.append(patches.Rectangle((x, y + 0.5 - w_tape/2), 1, w_tape, color=c_tape))
 
     elif type == 'arc_dual':
         # Dos curvas )(
-        # Curva 1
+        # Bordes
+        patches_list.append(patches.Wedge((x, y), 0.5 + w_tape/2 + w_border, 0, 90, width=w_tape + w_border*2, color=c_out))
+        patches_list.append(patches.Wedge((x+1, y+1), 0.5 + w_tape/2 + w_border, 180, 270, width=w_tape + w_border*2, color=c_out))
+        # Cintas
         patches_list.append(patches.Wedge((x, y), 0.5 + w_tape/2, 0, 90, width=w_tape, color=c_tape))
-        # Curva 2
         patches_list.append(patches.Wedge((x+1, y+1), 0.5 + w_tape/2, 180, 270, width=w_tape, color=c_tape))
-        
-        if style == "Outline (Borde)":
-            # Bordes más gruesos detrás
-            patches_list.insert(0, patches.Wedge((x, y), 0.5 + w_tape/2 + w_border, 0, 90, width=w_tape + w_border*2, color=c_out))
-            patches_list.insert(2, patches.Wedge((x+1, y+1), 0.5 + w_tape/2 + w_border, 180, 270, width=w_tape + w_border*2, color=c_out))
 
-    elif type == 'line':
-        # Recta simple | (Usada en bordes)
-        patches_list.append(patches.Rectangle((x + 0.5 - w_tape/2, y), w_tape, 1, color=c_tape))
-        if style == "Outline (Borde)":
-            patches_list.insert(0, patches.Rectangle((x + 0.5 - w_tape/2 - w_border, y), w_tape + w_border*2, 1, color=c_out))
-
-    # Aplicar transformaciones y dibujar
+    # Dibujar
     for patch in patches_list:
         patch.set_transform(tr)
         p(patch)
-        
-    # Efecto 3D / Tubular (Sombra interior)
-    if style == "Tubular (3D)" and type in ['cross', 'arc_dual', 'line']:
-        # Dibujar una línea más fina y clara en el centro
-        w_inner = w_tape * 0.2
-        c_highlight = "#FFFFFF" if c_tape != "#FFFFFF" else "#AAAAAA"
-        alpha = 0.3
-        
-        h_patches = []
-        if type == 'cross':
-            h_patches.append(patches.Rectangle((x + 0.5 - w_inner/2, y), w_inner, 1, color=c_highlight, alpha=alpha))
-            h_patches.append(patches.Rectangle((x, y + 0.5 - w_inner/2), 1, w_inner, color=c_highlight, alpha=alpha))
-        elif type == 'arc_dual':
-            h_patches.append(patches.Wedge((x, y), 0.5 + w_inner/2, 0, 90, width=w_inner, color=c_highlight, alpha=alpha))
-            h_patches.append(patches.Wedge((x+1, y+1), 0.5 + w_inner/2, 180, 270, width=w_inner, color=c_highlight, alpha=alpha))
-        
-        for hp in h_patches:
-            hp.set_transform(tr)
-            p(hp)
 
-# --- ALGORITMO PROCEDURAL "BREAK-GRID" ---
+def draw_geo_tile(ax, x, y, type, rot, c_main, c_acc):
+    tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
+    def p(patch): patch.set_antialiased(False); patch.set_linewidth(0); ax.add_patch(patch)
+    
+    # Fondo blanco siempre para geometria
+    p(patches.Rectangle((x, y), 1, 1, color='#FFFFFF'))
+    
+    if type == 'triangle':
+        poly = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c_main)
+        poly.set_transform(tr); p(poly)
+    elif type == 'quarter':
+        w = patches.Wedge((x, y), 1, 0, 90, color=c_main)
+        w.set_transform(tr); p(w)
+    elif type == 'circle':
+        p(patches.Circle((x+0.5, y+0.5), 0.4, color=c_main))
+    elif type == 'full':
+        p(patches.Rectangle((x, y), 1, 1, color=c_main))
+    elif type == 'strip':
+        r = patches.Rectangle((x, y+0.25), 1, 0.5, color=c_main)
+        r.set_transform(tr); p(r)
 
-def generate_procedural_grid(size, entropy):
+# --- ALGORITMOS GENERATIVOS ---
+
+def generate_knot_grid(size, entropy):
     """
-    Genera un grid válido de nudos usando mutación estocástica.
-    No usa bloques prefabricados. Genera un patrón ÚNICO cada vez.
+    Algoritmo de 'Romper la Reticula'.
+    Empieza con todo cruces y rompe aleatoriamente para crear curvas.
+    Garantiza continuidad perfecta.
     """
     rng = random.Random(st.session_state.seed)
     
-    # 1. Empezar con una retícula "Perfecta" (Todo conectado)
-    # 0 = Cross (+), 1 = Arc tipo 1 )(, 2 = Arc tipo 2 ︵︶
+    # 0 = Cross (+), 1 = Arc tipo 1 )(, 2 = Arc tipo 2 (arriba/abajo)
     grid = np.zeros((size, size), dtype=int) 
-    
-    # 2. Mutación: Romper la simetría
-    # Iteramos por cada celda y decidimos si la "rompemos" (convertimos cruz en curva)
-    # La entropía controla cuántas cruces sobreviven.
     
     for r in range(size):
         for c in range(size):
             if rng.random() < entropy:
-                # Romper el cruce.
-                # Elegir aleatoriamente la orientación de la curva (0 o 1)
-                # 1 = Curvas verticales )(, 2 = Curvas horizontales ︵︶
+                # Romper el cruce. Elegir orientacion de la curva
                 grid[r][c] = rng.choice([1, 2])
             else:
                 # Mantener cruce
                 grid[r][c] = 0
                 
-    # 3. Pulir Bordes (Opcional, para que parezca un objeto cerrado)
-    # Forzar curvas en los bordes para cerrar el nudo
-    for i in range(size):
-        # Borde superior (Debe rebotar hacia abajo)
-        # Borde izquierdo (Debe rebotar hacia derecha)
-        # Esto es complejo en lógica simple, dejaremos que sea "infinito" (se corta)
-        pass
+    return grid
+
+def generate_geo_grid(size, palette, mode):
+    rng = random.Random(st.session_state.seed)
+    grid = [[None for _ in range(size)] for _ in range(size)]
+    
+    shapes = ['triangle', 'quarter', 'circle', 'strip']
+    
+    if mode == "Super-Modulo 4x4":
+        # Generar un bloque maestro y repetirlo
+        block = [[None]*4 for _ in range(4)]
+        # Definir tema del bloque
+        theme_shape = rng.choice(shapes)
+        c1 = rng.choice(palette)
+        c2 = rng.choice([c for c in palette if c!=c1] or [c1])
+        
+        for r in range(4):
+            for c in range(4):
+                # Logica simetrica simple para el bloque
+                rot = 0
+                # Si es triangulo/cuarto, orientar al centro del 4x4
+                if r < 2 and c < 2: rot = 0
+                elif r < 2: rot = 3
+                elif c < 2: rot = 1
+                else: rot = 2
+                
+                block[r][c] = {'type': theme_shape, 'rot': rot, 'c1': c1, 'c2': c2}
+        
+        for r in range(size):
+            for c in range(size):
+                grid[r][c] = block[r%4][c%4]
+                
+    else: # Secuencia Logica
+        c1 = rng.choice(palette)
+        c2 = rng.choice([c for c in palette if c!=c1] or [c1])
+        shape = rng.choice(shapes)
+        
+        for r in range(size):
+            for c in range(size):
+                # Patron diagonal
+                rot = (r + c) % 4
+                is_alt = ((r//2) + (c//2)) % 2 == 0
+                color = c1 if is_alt else c2
+                grid[r][c] = {'type': shape, 'rot': rot, 'c1': color, 'c2': '#FFF'}
 
     return grid
 
-def render_art(grid, size, palette, style):
+# --- RENDERIZADO ---
+
+def render_art(grid, size, palette, motor):
     fig, ax = plt.subplots(figsize=(10, 10), dpi=100)
     ax.set_aspect('equal'); ax.axis('off')
     
-    # Colores
     c_bg = palette[0]
     c_tape = palette[1]
     c_out = palette[2] if len(palette) > 2 else c_bg
-    if len(palette) > 3: c_tape_2 = palette[3] # Opcional para alternar cintas
     
     for r in range(size):
         for c in range(size):
-            val = grid[r][c]
-            
-            # Mapear valor lógico a visual
-            # Invertimos Y para coordenada visual
             y_pos = size - 1 - r
             
-            tile_type = 'cross'
-            rot = 0
-            
-            if val == 0: # Cross
-                tile_type = 'cross'
-                rot = 0
-            elif val == 1: # Vertical Curves )(
-                tile_type = 'arc_dual'
-                rot = 0 # )( es rot 0 o 2
-            elif val == 2: # Horizontal Curves ︵︶
-                tile_type = 'arc_dual'
-                rot = 1 # Girar 90 grados para tener horizontal
-            
-            # Variación de color por posición (Checkerboard sutil) para dar profundidad
-            color_active = c_tape
-            # if (r+c)%2 == 0 and len(palette) > 3: color_active = palette[3] 
+            if motor == "Nudos Procedurales (Infinito)":
+                val = grid[r][c]
+                tile = 'cross'; rot = 0
+                if val == 1: tile='arc_dual'; rot=0
+                elif val == 2: tile='arc_dual'; rot=1
+                
+                draw_proc_tile(ax, c, y_pos, tile, rot, c_bg, c_tape, c_out)
+                
+            else:
+                cell = grid[r][c]
+                draw_geo_tile(ax, c, y_pos, cell['type'], cell['rot'], cell['c1'], cell['c2'])
 
-            draw_proc_tile(ax, c, y_pos, tile_type, rot, c_bg, color_active, c_out, style)
-
-    # Marco Exterior
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color=c_bg, linewidth=0) # Limpio
+    # Marco
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color=c_bg if motor=="Nudos..." else '#000', linewidth=8)
     
     return fig
 
-# --- EJECUCIÓN ---
+# --- EJECUCION ---
 
-# Generar datos lógicos
-logical_grid = generate_procedural_grid(grid_size, caos)
+if motor == "Nudos Procedurales (Infinito)":
+    data_grid = generate_knot_grid(grid_size, caos if 'caos' in locals() else 0.6)
+else:
+    data_grid = generate_geo_grid(grid_size, paleta, modo_geo)
 
-# Renderizar
-figura = render_art(logical_grid, grid_size, paleta, estilo_linea)
+figura = render_art(data_grid, grid_size, paleta, motor)
 
 st.pyplot(figura)
 
 buf = BytesIO()
-figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor=paleta[0])
-st.download_button(label="DOWNLOAD HD ARTWORK", data=buf.getvalue(), file_name="nicoart_quantum.png", mime="image/png")
+figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor=paleta[0] if motor.startswith("Nudos") else "#FFFFFF")
+st.download_button(label="DESCARGAR IMAGEN HD", data=buf.getvalue(), file_name="nicoart_systemic.png", mime="image/png")
