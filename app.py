@@ -9,24 +9,92 @@ from io import BytesIO
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="PATRONES INFINITOS", layout="centered")
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS (UI MODERNA REACT/NEXT.JS) ---
 st.markdown("""
     <style>
-    .main { background-color: #fdfdfd; }
+    /* Importar fuente Inter (típica de UI moderna) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+    /* Fondo y Tipografía General */
+    .stApp {
+        background-color: #ffffff;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Título Principal */
     h1 { 
-        font-family: 'Helvetica Neue', sans-serif;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        font-weight: 900; color: #000; text-align: center; margin-bottom: 0px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 800; 
+        letter-spacing: -1.5px;
+        color: #000; 
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 0px;
     }
+    
+    /* Subtítulo */
     .author {
-        text-align: center; color: #888; font-size: 0.8em; margin-top: -10px; margin-bottom: 30px;
+        text-align: center; color: #888; font-size: 0.9em; font-weight: 600; 
+        margin-top: -10px; margin-bottom: 40px; letter-spacing: 1px;
     }
+
+    /* Estilo del Panel de Control (Expander Moderno) */
+    .streamlit-expanderHeader {
+        background-color: #ffffff;
+        border: 1px solid #eaeaea;
+        border-radius: 12px;
+        font-weight: 600;
+        color: #111;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+        transition: all 0.2s ease;
+    }
+    .streamlit-expanderHeader:hover {
+        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        border-color: #000;
+    }
+    .streamlit-expanderContent {
+        border: 1px solid #eaeaea;
+        border-top: none;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        background-color: #fafafa;
+        padding: 20px;
+    }
+
+    /* BOTÓN DE GENERAR (DISEÑO PREMIUM) */
     div.stButton > button { 
-        width: 100%; border: 4px solid #000; border-radius: 0px; font-weight: 900; font-size: 18px; text-transform: uppercase;
-        background-color: #fff; color: #000; padding: 20px 0px; transition: all 0.2s; box-shadow: 8px 8px 0px #000;
+        width: 100%; 
+        border: none;
+        border-radius: 12px; /* Redondeado moderno */
+        font-weight: 700; 
+        font-size: 16px; 
+        letter-spacing: 0.5px;
+        
+        /* Gradiente sutil o negro sólido */
+        background: #111111; 
+        color: #ffffff; 
+        
+        padding: 18px 0px; 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 4px 14px 0 rgba(0,0,0,0.39);
     }
-    div.stButton > button:hover { transform: translate(-4px, -4px); box-shadow: 12px 12px 0px #000; background-color: #f0f0f0;}
+    
+    /* Efecto Hover del Botón */
+    div.stButton > button:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4); 
+        background-color: #000;
+        color: #FFC300; /* Amarillo Huevo al pasar el mouse */
+    }
+    div.stButton > button:active { 
+        transform: translateY(1px); 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+    }
+
+    /* Ajustes generales */
+    [data-testid="stSidebar"] { display: none; }
+    .block-container { padding-top: 2rem; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -34,57 +102,61 @@ st.markdown("""
 st.markdown("<h1>PATRONES INFINITOS</h1>", unsafe_allow_html=True)
 st.markdown("<p class='author'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
-# --- PALETAS ---
+# --- PALETAS (AMARILLO HUEVO PRIMERA) ---
 PALETAS = {
-    "Arquitecto (Grises)": ["#000000", "#333333", "#777777", "#BBBBBB", "#FFFFFF"],
-    "Cyberpunk Fluor": ["#000000", "#FF00FF", "#00FFFF", "#CCFF00", "#791E94"],
-    "Vitamina C (Naranjas)": ["#FFFFFF", "#FF9F1C", "#FFBF69", "#FF5400", "#333333"],
-    "Mostaza Retro 70s": ["#3B2518", "#E87A25", "#D9A404", "#8C4926", "#F0EAD6"],
-    "Pastel Nórdico": ["#FFFFFF", "#FFB7C5", "#B5EAD7", "#E2F0CB", "#FFDAC1"],
-    "Alhambra Real": ["#F2ECCE", "#1A4780", "#D9A404", "#8C2727", "#2E5936"],
-    "Bauhaus Puro": ["#F0F0F0", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"],
-    "Azulejo Lisboa": ["#FFFFFF", "#003399", "#FFCC00", "#000000", "#6699FF"],
-    "Océano Profundo": ["#001219", "#005F73", "#0A9396", "#94D2BD", "#E9D8A6"],
-    "Bosque Místico": ["#0D1B2A", "#1B263B", "#415A77", "#778DA9", "#E0E1DD"],
-    "Vino Tinto": ["#160000", "#310000", "#4C0000", "#6D0000", "#D4AF37"],
-    "Caramelo Pop": ["#FFFFFF", "#FF595E", "#FFCA3A", "#8AC926", "#1982C4"],
-    "Desierto Dorado": ["#283618", "#606C38", "#FEFAE0", "#DDA15E", "#BC6C25"],
-    "Lavanda Digital": ["#E6E6FA", "#9370DB", "#4B0082", "#8A2BE2", "#FFFFFF"],
-    "Matrix": ["#000000", "#003B00", "#008F11", "#00FF41", "#0D0208"],
-    "Industrial": ["#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429"],
-    "Chocolate y Crema": ["#F4F1DE", "#E07A5F", "#3D405B", "#81B29A", "#F2CC8F"],
-    "Alta Costura (B&W)": ["#000000", "#111111", "#AAAAAA", "#EEEEEE", "#FFFFFF"],
-    "Atardecer Miami": ["#540D6E", "#EE4266", "#FFD23F", "#3BCEAC", "#0EAD69"],
-    "Tierra Cruda": ["#582F0E", "#7F4F24", "#936639", "#A68A64", "#B6AD90"]
+    "🟡 Amarillo Huevo & Negro": ["#FFC300", "#000000"], # AMARILLO HUEVO DE DISEÑO
+    "🏛️ Arquitecto (Grises)": ["#000000", "#333333", "#777777", "#BBBBBB", "#FFFFFF"],
+    "💊 Cyberpunk Fluor": ["#000000", "#FF00FF", "#00FFFF", "#CCFF00", "#791E94"],
+    "🍊 Vitamina C": ["#FFFFFF", "#FF9F1C", "#FFBF69", "#FF5400", "#333333"],
+    "🏺 Mostaza Retro 70s": ["#3B2518", "#E87A25", "#D9A404", "#8C4926", "#F0EAD6"],
+    "🧊 Pastel Nórdico": ["#FFFFFF", "#FFB7C5", "#B5EAD7", "#E2F0CB", "#FFDAC1"],
+    "🕌 Alhambra Real": ["#F2ECCE", "#1A4780", "#D9A404", "#8C2727", "#2E5936"],
+    "🔳 Bauhaus Puro": ["#F0F0F0", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"],
+    "🌊 Azulejo Lisboa": ["#FFFFFF", "#003399", "#FFCC00", "#000000", "#6699FF"],
+    "🐋 Océano Profundo": ["#001219", "#005F73", "#0A9396", "#94D2BD", "#E9D8A6"],
+    "🌲 Bosque Místico": ["#0D1B2A", "#1B263B", "#415A77", "#778DA9", "#E0E1DD"],
+    "🍷 Vino Tinto": ["#160000", "#310000", "#4C0000", "#6D0000", "#D4AF37"],
+    "🍭 Caramelo Pop": ["#FFFFFF", "#FF595E", "#FFCA3A", "#8AC926", "#1982C4"],
+    "🐪 Desierto Dorado": ["#283618", "#606C38", "#FEFAE0", "#DDA15E", "#BC6C25"],
+    "👾 Matrix": ["#000000", "#003B00", "#008F11", "#00FF41", "#0D0208"],
+    "🏭 Industrial": ["#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429"],
+    "🍫 Chocolate y Crema": ["#F4F1DE", "#E07A5F", "#3D405B", "#81B29A", "#F2CC8F"],
+    "🕶️ Alta Costura (B&W)": ["#000000", "#111111", "#AAAAAA", "#EEEEEE", "#FFFFFF"],
+    "🌴 Atardecer Miami": ["#540D6E", "#EE4266", "#FFD23F", "#3BCEAC", "#0EAD69"],
+    "🏺 Tierra Cruda": ["#582F0E", "#7F4F24", "#936639", "#A68A64", "#B6AD90"]
 }
 
-# --- CONTROLES ---
-with st.expander("🎛️ CONTROLES (TÓCAME)", expanded=True):
-    st.write("### 1. Atmósfera")
-    p_name = st.selectbox("Paleta:", list(PALETAS.keys()))
+# --- CONTROLES MODERNOS ---
+with st.expander("🎛️ PERSONALIZAR DISEÑO", expanded=True):
+    
+    st.caption("1. ELIGE TU ESTILO")
+    p_name = st.selectbox("Paleta de Color", list(PALETAS.keys()), label_visibility="collapsed")
     paleta_actual = PALETAS[p_name]
     
-    # Preview
-    cols = st.columns(5)
+    # Preview Minimalista
+    cols = st.columns(len(paleta_actual))
     for i, c in enumerate(cols):
-        c.markdown(f"<div style='background-color:{paleta_actual[i]};height:20px;width:100%'></div>", unsafe_allow_html=True)
+        c.markdown(f"<div style='background-color:{paleta_actual[i]};height:24px;width:100%;border-radius:4px;'></div>", unsafe_allow_html=True)
 
-    st.write("### 2. Estructura")
+    st.write("") # Espacio
+    st.caption("2. ESTRUCTURA & ESCALA")
+    
     c1, c2 = st.columns(2)
     with c1:
-        grid_size = st.select_slider("Resolución Grid", options=[4, 8, 12, 16, 20, 24], value=8)
+        grid_size = st.select_slider("Resolución", options=[4, 8, 12, 16, 20, 24], value=8)
     with c2:
-        escala_formas = st.select_slider("Escala", options=["Micro", "Medio", "Macro (Gigante)"], value="Macro (Gigante)")
+        escala_formas = st.select_slider("Tamaño Formas", options=["Micro", "Medio", "Macro (Gigante)"], value="Macro (Gigante)")
     
-    simetria = st.selectbox("Simetría", ["Caleidoscopio", "Repetición", "Ajedrez Armónico"])
+    simetria = st.selectbox("Tipo de Simetría", ["Caleidoscopio (Mandala)", "Repetición (Papel Pintado)", "Ajedrez Armónico"])
     
+    st.write("") # Espacio
     if 'seed' not in st.session_state: st.session_state.seed = 0
-    if st.button("🎲 GENERAR PATRÓN"): st.session_state.seed += 1
+    if st.button("Generar Nueva Obra ✨"): st.session_state.seed += 1
 
-# --- RENDERIZADO ---
+# --- RENDERIZADO HD CON RETÍCULA FINA ---
 
 def add_tile(ax, x, y, type, rot, c_main, c_acc):
-    """Dibuja una celda unitaria con retícula fina."""
+    """Dibuja una celda unitaria con bordes nítidos."""
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
     
     def patch_hd(p):
@@ -92,58 +164,68 @@ def add_tile(ax, x, y, type, rot, c_main, c_acc):
         p.set_linewidth(0)
         ax.add_patch(p)
 
-    # 1. Fondo base
+    # 1. Fondo base (Blanco limpio)
     patch_hd(patches.Rectangle((x, y), 1, 1, color='#FFFFFF')) 
     
-    # 2. Formas
+    # 2. Formas Geométricas
     if type == 'solid':
         patch_hd(patches.Rectangle((x, y), 1, 1, color=c_main))
-    elif type == 'triangle':
+    elif type == 'triangle': 
         p = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c_main)
         p.set_transform(tr); patch_hd(p)
-    elif type == 'quarter_circle':
+    elif type == 'quarter_circle': 
         w = patches.Wedge((x, y), 1, 0, 90, color=c_main)
         w.set_transform(tr); patch_hd(w)
-    elif type == 'strip':
+    elif type == 'strip': 
         p = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=c_main)
         p2 = patches.Polygon([(x+0.5, y+0.5), (x+1.5, y+0.5), (x+0.5, y+1.5)], color=c_acc)
         p.set_transform(tr); patch_hd(p)
     elif type == 'circle':
         patch_hd(patches.Circle((x+0.5, y+0.5), 0.4, color=c_main))
-    elif type == 'frame':
+    elif type == 'frame': 
         patch_hd(patches.Rectangle((x, y), 1, 1, color=c_main))
         patch_hd(patches.Rectangle((x+0.25, y+0.25), 0.5, 0.5, color=c_acc))
-    elif type == 'bow':
+    elif type == 'bow': 
         p1 = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=c_main)
         p2 = patches.Polygon([(x, y+1), (x+1, y+1), (x+0.5, y+0.5)], color=c_main)
         p1.set_transform(tr); p2.set_transform(tr)
         patch_hd(p1); patch_hd(p2)
 
-    # 3. RETÍCULA INTERIOR (MUY FINA)
-    # Dibujamos un rectángulo sin relleno encima de todo
+    # 3. RETÍCULA INTERIOR (MUY FINA) - Estilo técnico
     grid_line = patches.Rectangle(
         (x, y), 1, 1, 
         fill=False, 
-        edgecolor='#000000', # Color de la línea (negro)
-        linewidth=0.15,      # Muy muy fina (0.15 es sutil en HD)
-        alpha=0.2,           # Semitransparente para no molestar
-        zorder=100,          # Siempre encima
-        antialiased=True     # Suavizada para que se vea elegante
+        edgecolor='#000000', 
+        linewidth=0.15,      # Ultra fina
+        alpha=0.15,          # Muy sutil
+        zorder=100,
+        antialiased=True
     )
     ax.add_patch(grid_line)
 
-# --- LÓGICA MACRO ---
+# --- LÓGICA MACRO-BLOQUES ---
 
 def fill_macro_block(grid, r_start, c_start, block_size, palette):
     macro_type = random.choice(['big_diamond', 'big_x', 'concentric', 'big_circle'])
-    c1 = random.choice(palette)
-    avail = [c for c in palette if c != c1]
-    c2 = random.choice(avail) if avail else c1
+    
+    # Selección inteligente de colores para contraste
+    c1 = palette[0] # Color principal
+    if len(palette) > 1:
+        c2 = palette[1] # Color secundario (Negro en la paleta huevo)
+    else:
+        c2 = c1
+        
+    # Aleatorizar inversión de colores
+    if random.random() > 0.5 and len(palette) > 1:
+        c1, c2 = c2, c1
+    
+    # Si la paleta tiene más colores, usarlos como acento
+    accent = random.choice(palette[2:]) if len(palette) > 2 else c2
     
     for r in range(block_size):
         for c in range(block_size):
             rr, cc = r, c
-            cell_type, rot, color, accent = 'solid', 0, '#FFFFFF', c2
+            cell_type, rot, color, cell_acc = 'solid', 0, '#FFFFFF', accent
             
             if macro_type == 'big_diamond':
                 if rr + cc < block_size // 2: pass
@@ -172,7 +254,7 @@ def fill_macro_block(grid, r_start, c_start, block_size, palette):
                 else: cell_type='solid'; color=c2
 
             if r_start + r < len(grid) and c_start + c < len(grid):
-                grid[r_start + r][c_start + c] = {'type': cell_type, 'rot': rot, 'c_main': color, 'c_acc': accent}
+                grid[r_start + r][c_start + c] = {'type': cell_type, 'rot': rot, 'c_main': color, 'c_acc': cell_acc}
 
 def generate_pattern(size, palette, scale_mode, symmetry_mode):
     block_size = max(4, size // 2) if "Macro" in scale_mode else (max(2, size // 4) if "Medio" in scale_mode else 1)
@@ -216,15 +298,17 @@ def render_final(grid, size):
             if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}.get(rot, rot)
             add_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#000', linewidth=6)
+    # Marco Exterior (Negro Sólido)
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#000', linewidth=8)
     return fig
 
 # --- EJECUCIÓN ---
 random.seed(st.session_state.seed)
 grid_data = generate_pattern(grid_size, paleta_actual, escala_formas, simetria)
 figura = render_final(grid_data, grid_size)
+
 st.pyplot(figura)
 
 buf = BytesIO()
 figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
-st.download_button(label="⬇️ DESCARGAR", data=buf.getvalue(), file_name="patron_infinito.png", mime="image/png")
+st.download_button(label="⬇️ Descargar Imagen HD", data=buf.getvalue(), file_name="patron_infinito_nb.png", mime="image/png")
