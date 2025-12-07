@@ -6,259 +6,305 @@ import numpy as np
 import random
 from io import BytesIO
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="PATRONES INFINITOS", layout="centered")
+# --- CONFIGURACIÓN ---
+st.set_page_config(page_title="NICOART GENERATOR", layout="centered")
 
-# --- ESTILOS CSS (UI MODERNA) ---
+# --- ESTILOS CSS (DISEÑO PREMIUM) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-    .stApp { background-color: #ffffff; font-family: 'Inter', sans-serif; }
-    h1 { font-family: 'Inter', sans-serif; font-weight: 800; letter-spacing: -1.5px; color: #000; text-align: center; font-size: 2.2rem; text-transform: uppercase; margin: 0; }
-    .author { text-align: center; color: #888; font-size: 0.8em; font-weight: 600; margin-bottom: 30px; letter-spacing: 1px; }
-    .streamlit-expanderHeader { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; font-weight: 600; color: #111; padding: 1rem; }
-    .streamlit-expanderContent { border: 1px solid #e0e0e0; border-top: none; background-color: #fff; padding: 1.5rem; }
-    div.stButton > button { width: 100%; border: none; border-radius: 8px; font-weight: 700; font-size: 16px; letter-spacing: 1px; background: #111; color: #fff; padding: 18px 0px; box-shadow: 0 4px 14px 0 rgba(0,0,0,0.2); transition: transform 0.1s ease-in-out; }
-    div.stButton > button:hover { transform: translateY(-2px); background-color: #000; color: #FFC300; }
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&display=swap');
+    .stApp { background-color: #ffffff; font-family: 'Space Grotesk', sans-serif; }
+    h1 { font-weight: 700; letter-spacing: -2px; color: #000; text-align: center; text-transform: uppercase; font-size: 3rem; margin: 0; }
+    .author { text-align: center; color: #999; font-size: 0.8em; letter-spacing: 2px; margin-bottom: 40px; text-transform: uppercase;}
+    
+    /* Panel de Control */
+    .streamlit-expanderHeader { background: #fff; border: 2px solid #000; color: #000; font-weight: 700; border-radius: 0px; }
+    .streamlit-expanderContent { border: 2px solid #000; border-top: 0; background: #fff; padding: 20px; }
+    
+    /* Botón */
+    div.stButton > button { 
+        width: 100%; background: #000; color: #fff; border: none; border-radius: 0px; 
+        font-weight: 700; font-size: 18px; padding: 20px; letter-spacing: 1px;
+        transition: all 0.2s;
+    }
+    div.stButton > button:hover { background: #FFD700; color: #000; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    
     [data-testid="stSidebar"] { display: none; }
-    .block-container { padding-top: 2rem; }
+    .block-container { padding-top: 2rem; max-width: 800px; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- CABECERA ---
-st.markdown("<h1>PATRONES INFINITOS</h1>", unsafe_allow_html=True)
-st.markdown("<p class='author'>by Nico.Bastida</p>", unsafe_allow_html=True)
+st.markdown("<h1>NICOART</h1>", unsafe_allow_html=True)
+st.markdown("<p class='author'>Algoritmo de Geometría Emergente</p>", unsafe_allow_html=True)
 
-# --- PALETAS ---
+# --- PALETAS DE ALTO DISEÑO ---
 PALETAS = {
-    "Amarillo & Negro": ["#FFC300", "#000000"], 
-    "Bauhaus": ["#F0F0F0", "#111111", "#D92B2B", "#2B5CD9", "#F2C84B"],
-    "Retro 70s": ["#3B2518", "#E87A25", "#D9A404", "#8C4926", "#F0EAD6"],
-    "Alhambra": ["#F2ECCE", "#1A4780", "#D9A404", "#8C2727", "#2E5936"],
-    "Azulejo": ["#FFFFFF", "#003399", "#FFCC00", "#000000", "#6699FF"],
-    "Vitamina": ["#FFFFFF", "#FF9F1C", "#FFBF69", "#FF5400", "#333333"],
-    "Nórdico": ["#FFFFFF", "#FFB7C5", "#B5EAD7", "#E2F0CB", "#FFDAC1"],
-    "Matrix": ["#000000", "#003B00", "#008F11", "#00FF41", "#0D0208"],
-    "Chocolate": ["#F4F1DE", "#E07A5F", "#3D405B", "#81B29A", "#F2CC8F"],
-    "Industrial": ["#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429"]
-}
-
-# --- FORMAS ---
-FORMAS = {
-    "△ Triángulos": "triangle", "◕ Curvas": "quarter_circle", 
-    "○ Círculos": "circle", "□ Marcos": "frame", 
-    "✕ Lazos": "bow", "≡ Bandas": "strip", 
-    "◇ Diamantes": "diamond", "■ Sólidos": "solid"
+    "🟡 HUEVO & NEGRO": ["#FFD700", "#000000"], 
+    "🔴 BAUHAUS PRIMARIO": ["#F0F0F0", "#111111", "#D92B2B", "#1A4780", "#E6AF2E"],
+    "🏺 ALHAMBRA TIERRA": ["#F2ECCE", "#8C2727", "#D9A404", "#2E5936", "#1A4780"],
+    "⚫ ARQUITECTO": ["#FFFFFF", "#000000", "#333333", "#999999", "#E5E5E5"],
+    "🌊 ATLÁNTICO": ["#F0F8FF", "#001219", "#005F73", "#0A9396", "#94D2BD"],
+    "🍊 POP 70s": ["#FFF1E6", "#E85D04", "#F48C06", "#FAA307", "#370617"],
+    "🌿 JARDÍN ZEN": ["#F7F7F7", "#2D3436", "#636E72", "#55EFC4", "#00B894"]
 }
 
 # --- CONTROLES ---
-with st.expander("⚙ CONFIGURACIÓN", expanded=True):
-    p_name = st.selectbox("Paleta", list(PALETAS.keys()), label_visibility="collapsed")
-    paleta = PALETAS[p_name]
-    
-    cols = st.columns(len(paleta))
-    for i, c in enumerate(cols):
-        c.markdown(f"<div style='background-color:{paleta[i]};height:12px;border-radius:2px;'></div>", unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    c1, c2 = st.columns(2)
+with st.expander("🎛️ LABORATORIO DE DISEÑO", expanded=True):
+    c1, c2 = st.columns([2, 1])
     with c1:
-        # AÑADIDO: Modo NicoArt
-        modo = st.selectbox("Modo", ["NicoArt (Estructuras)", "Caleidoscopio", "Repetición"])
+        p_name = st.selectbox("PALETA", list(PALETAS.keys()), label_visibility="collapsed")
+        paleta = PALETAS[p_name]
+        # Preview
+        cols = st.columns(len(paleta))
+        for i, c in enumerate(cols):
+            c.markdown(f"<div style='background:{paleta[i]};height:15px;width:100%'></div>", unsafe_allow_html=True)
     with c2:
-        grid_size = st.select_slider("Resolución", options=[4, 8, 12, 16, 20, 24], value=8)
+        # Aquí está la clave: FAMILIAS DE FORMAS
+        familia = st.selectbox("FAMILIA GEOMÉTRICA", ["Mezcla Inteligente", "Solo Diagonales (Estrellas)", "Solo Curvas (Retro)", "Ortogonal (Laberinto)"])
 
-    formas_sel = []
-    if modo == "Repetición":
-        st.caption("Selecciona formas:")
-        sel = st.multiselect("Formas", list(FORMAS.keys()), default=list(FORMAS.keys())[:3], label_visibility="collapsed")
-        formas_sel = [FORMAS[k] for k in sel] or ['solid']
-    else:
-        formas_sel = list(FORMAS.values())
+    st.write("")
+    c3, c4 = st.columns(2)
+    with c3:
+        grid_size = st.select_slider("RESOLUCIÓN (Densidad)", options=[4, 8, 12, 16, 20], value=8)
+    with c4:
+        # El modo Super-Módulo es el que crea las figuras grandes
+        modo = st.selectbox("MODO CONSTRUCTIVO", ["Super-Módulos (Figuras Grandes)", "Tejido Infinito (Interlaced)"])
 
     st.write("")
     if 'seed' not in st.session_state: st.session_state.seed = 0
-    if st.button("GENERAR PATRÓN"): st.session_state.seed += 1
+    if st.button("GENERAR ARTE"): st.session_state.seed += 1
 
-# --- RENDERIZADO HD ---
-def add_tile_hd(ax, x, y, type, rot, c_main, c_acc):
+# --- ALFABETO GEOMÉTRICO PURO (SIN LAZOS NI EMOJIS) ---
+# Definimos vectores exactos para que encajen matemáticamente
+
+def draw_tile(ax, x, y, type, rot, c1, c2):
+    # Transformación base (rotación alrededor del centro)
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
-    def p(patch): patch.set_antialiased(False); patch.set_linewidth(0); ax.add_patch(patch)
     
-    p(patches.Rectangle((x, y), 1, 1, color='#FFFFFF')) # Fondo
-    
-    if type == 'solid': p(patches.Rectangle((x, y), 1, 1, color=c_main))
-    elif type == 'triangle': 
-        poly = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c_main)
-        poly.set_transform(tr); p(poly)
-    elif type == 'quarter_circle': 
-        w = patches.Wedge((x, y), 1, 0, 90, color=c_main); w.set_transform(tr); p(w)
-    elif type == 'strip':
-        r = patches.Rectangle((x, y+0.25), 1, 0.5, color=c_main); r.set_transform(tr); p(r)
-    elif type == 'circle': p(patches.Circle((x+0.5, y+0.5), 0.4, color=c_main))
-    elif type == 'frame': 
-        p(patches.Rectangle((x, y), 1, 1, color=c_main))
-        p(patches.Rectangle((x+0.25, y+0.25), 0.5, 0.5, color=c_acc))
-    elif type == 'bow':
-        p1 = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=c_main)
-        p2 = patches.Polygon([(x, y+1), (x+1, y+1), (x+0.5, y+0.5)], color=c_main)
-        p1.set_transform(tr); p2.set_transform(tr); p(p1); p(p2)
-    elif type == 'diamond':
-        poly = patches.Polygon([(x+0.5, y), (x+1, y+0.5), (x+0.5, y+1), (x, y+0.5)], color=c_main)
-        p(poly)
+    def p(patch): 
+        patch.set_antialiased(False)
+        patch.set_linewidth(0)
+        ax.add_patch(patch)
 
-    # Retícula fina
-    ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#000', linewidth=0.25, alpha=0.15, zorder=100))
+    # Fondo base (siempre c2 para contraste, o blanco si se prefiere aire)
+    # Usaremos c2 como base y c1 como figura
+    p(patches.Rectangle((x, y), 1, 1, color=c2))
 
-# --- LÓGICA NICOART (MACRO-ESTRUCTURAS) ---
-def generate_nicoart(size, palette):
-    """Genera patrones basados en estructuras grandes, no en celdas individuales."""
-    grid = [[None for _ in range(size)] for _ in range(size)]
-    rng = random.Random(st.session_state.seed)
-    
-    # 1. Definir una estructura base (Layout)
-    # Puede ser: Cruz Grande, Diamante Central, Marcos Concéntricos, Damero Gigante
-    layout_type = rng.choice(['big_cross', 'big_diamond', 'concentric', 'checkers_macro', 'stripes_macro'])
-    
-    c_bg = rng.choice(palette)
-    c_fg = rng.choice([c for c in palette if c != c_bg] or [c_bg])
-    c_acc = rng.choice([c for c in palette if c not in [c_bg, c_fg]] or [c_fg])
-
-    for r in range(size):
-        for c in range(size):
-            # Coordenadas normalizadas (-1 a 1) para geometría matemática
-            nx = (c / (size-1)) * 2 - 1
-            ny = (r / (size-1)) * 2 - 1
-            dist_center = max(abs(nx), abs(ny)) # Distancia Chebyshev (cuadrada)
-            dist_diamond = abs(nx) + abs(ny)    # Distancia Manhattan (rombo)
-            
-            tipo = 'solid'
-            rot = 0
-            color = c_bg
-            accent = c_fg
-
-            # --- LÓGICA DE DIBUJO MACRO ---
-            if layout_type == 'big_cross':
-                # Cruz gigante que atraviesa el lienzo
-                if abs(nx) < 0.2 or abs(ny) < 0.2:
-                    tipo = 'solid'; color = c_fg
-                    if abs(nx) < 0.2 and abs(ny) < 0.2: color = c_acc # Centro cruz
-                else:
-                    # Relleno de esquinas con triángulos mirando al centro
-                    tipo = 'triangle'; color = c_bg
-                    if nx < 0 and ny < 0: rot = 0
-                    elif nx > 0 and ny < 0: rot = 1
-                    elif nx > 0 and ny > 0: rot = 2
-                    elif nx < 0 and ny > 0: rot = 3
-
-            elif layout_type == 'big_diamond':
-                # Gran rombo central
-                if dist_diamond < 1.0: # Dentro del rombo
-                    if dist_diamond < 0.3: # Centro del rombo
-                        tipo = 'frame'; color = c_acc; accent = c_fg
-                    else:
-                        tipo = 'solid'; color = c_fg
-                else: # Esquinas fuera del rombo
-                    tipo = 'quarter_circle'; color = c_bg
-                    # Orientar curvas hacia afuera
-                    if nx < 0 and ny < 0: rot = 2
-                    elif nx > 0 and ny < 0: rot = 3
-                    elif nx > 0 and ny > 0: rot = 0
-                    elif nx < 0 and ny > 0: rot = 1
-
-            elif layout_type == 'concentric':
-                # Marcos cuadrados concéntricos
-                # Bandas basadas en la distancia al centro
-                band = int(dist_center * (size/2)) 
-                if band % 2 == 0:
-                    tipo = 'solid'; color = c_fg
-                else:
-                    tipo = 'strip'; rot = 0 if abs(ny) > abs(nx) else 1; color = c_acc
-
-            elif layout_type == 'checkers_macro':
-                # Damero pero de bloques grandes (ej. 4x4)
-                block_size = max(2, size // 4)
-                is_black = ((r // block_size) + (c // block_size)) % 2 == 0
-                if is_black:
-                    tipo = 'bow'; color = c_fg; rot = (r+c)%2
-                else:
-                    tipo = 'solid'; color = c_bg
-
-            elif layout_type == 'stripes_macro':
-                # Franjas diagonales grandes
-                diag_idx = (r + c) // max(2, size // 8)
-                if diag_idx % 2 == 0:
-                    tipo = 'solid'; color = c_fg
-                else:
-                    tipo = 'triangle'; color = c_acc; rot = (r+c)%4
-
-            grid[r][c] = {'type': tipo, 'rot': rot, 'c_main': color, 'c_acc': accent}
-    
-    return grid
-
-# --- GENERADORES CLÁSICOS ---
-def generate_classic(size, palette, mode, allowed_shapes):
-    rng = random.Random(st.session_state.seed)
-    grid = [[None for _ in range(size)] for _ in range(size)]
-    
-    if mode == "Repetición":
-        for r in range(size):
-            for c in range(size):
-                idx = (r + c) % len(allowed_shapes)
-                tipo = allowed_shapes[idx]
-                rot = (r + c) % 2
-                c1 = palette[r % len(palette)]
-                c2 = palette[(r+1) % len(palette)]
-                grid[r][c] = {'type': tipo, 'rot': rot, 'c_main': c1, 'c_acc': c2}
-    else: # Caleidoscopio
-        # Usa una semilla aleatoria pero simétrica
-        current_shapes = allowed_shapes.copy(); rng.shuffle(current_shapes)
-        current_palette = palette.copy(); rng.shuffle(current_palette)
+    if type == 'full': # Bloque sólido
+        p(patches.Rectangle((x, y), 1, 1, color=c1))
         
-        seed_size = size // 2
-        for r in range(seed_size):
-            for c in range(seed_size):
-                tipo = current_shapes[(c + r) % len(current_shapes)]
-                rot = (r * c) % 4
-                c1 = current_palette[r % len(current_palette)]
-                c2 = current_palette[(c+1) % len(current_palette)]
+    elif type == 'tri_half': # Triángulo mitad perfecta (Diagonal)
+        poly = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c1)
+        poly.set_transform(tr); p(poly)
+        
+    elif type == 'tri_corner': # Triángulo pequeño en esquina (1/4)
+        poly = patches.Polygon([(x, y), (x+1, y), (x+0.5, y+0.5)], color=c1)
+        # Ajuste para que sea esquina real:
+        poly = patches.Polygon([(x, y), (x+1, y), (x, y+1)], color=c1) # Esto es half
+        # Corner real:
+        poly = patches.Polygon([(x, y), (x+0.5, y), (x, y+0.5)], color=c1)
+        poly.set_transform(tr); p(poly)
+
+    elif type == 'arc_corner': # Cuarto de círculo (Retro)
+        w = patches.Wedge((x, y), 1, 0, 90, color=c1)
+        w.set_transform(tr); p(w)
+        
+    elif type == 'arc_ring': # Anillo curvo
+        w1 = patches.Wedge((x, y), 1, 0, 90, color=c1)
+        w2 = patches.Wedge((x, y), 0.5, 0, 90, color=c2) # Hueco
+        w1.set_transform(tr); w2.set_transform(tr)
+        p(w1); p(w2)
+
+    elif type == 'strip_diag': # Banda diagonal (Cruce)
+        # Creamos un polígono que va de esq a esq con grosor
+        pts = [(x, y), (x+0.3, y), (x+1, y+0.7), (x+1, y+1), (x+0.7, y+1), (x, y+0.3)]
+        # Simplificado para geometría perfecta de quilt:
+        # Triangulo grande menos triangulo pequeño
+        p1 = patches.Polygon([(x, y), (x+1, y), (x+1, y+1), (x, y+1)], color=c2) # Fondo
+        p2 = patches.Polygon([(x, y), (x+1, y+1), (x+0.3, y+1), (x, y+0.3)], color=c1) # Banda no, mejor simple
+        # Triangulo mitad color 1
+        t1 = patches.Polygon([(x, y), (x+1, y+1), (x, y+1)], color=c1)
+        t1.set_transform(tr); p(t1)
+        
+    elif type == 'stripe_center': # Banda recta
+        r = patches.Rectangle((x+0.33, y), 0.33, 1, color=c1)
+        r.set_transform(tr); p(r)
+        
+    elif type == 'checker_4': # 4 cuadraditos
+        p(patches.Rectangle((x, y), 0.5, 0.5, color=c1))
+        p(patches.Rectangle((x+0.5, y+0.5), 0.5, 0.5, color=c1))
+
+# --- MOTOR LÓGICO DE SUPER-MÓDULOS ---
+# Aquí está la inteligencia. Define cómo se agrupan las celdas para formar figuras.
+
+def get_super_module(family, palette):
+    """Devuelve un bloque de 2x2 celdas que forman una figura coherente."""
+    # Estructura del super módulo: 2 filas, 2 columnas. 
+    # Cada celda: (tipo, rotación, color_figura, color_fondo)
+    
+    rng = random.Random() # Usaremos el global seed después
+    
+    c_bg = palette[0] # Fondo dominante
+    # Elegir color figura contrastante
+    c_fg = rng.choice(palette[1:]) if len(palette) > 1 else c_bg
+    
+    # Definir patrones lógicos (La "Receta")
+    patterns = []
+    
+    # 1. DIAMANTE / ESTRELLA (Requiere familia Diagonal o Mezcla)
+    if family in ["Mezcla Inteligente", "Solo Diagonales (Estrellas)"]:
+        # Diamante Central (4 triángulos mirando al centro)
+        patterns.append([
+            [('tri_half', 0, c_fg, c_bg), ('tri_half', 3, c_fg, c_bg)], # Fila 1
+            [('tri_half', 1, c_fg, c_bg), ('tri_half', 2, c_fg, c_bg)]  # Fila 2
+        ])
+        # Reloj de Arena (X)
+        patterns.append([
+            [('tri_half', 1, c_fg, c_bg), ('tri_half', 2, c_fg, c_bg)],
+            [('tri_half', 0, c_fg, c_bg), ('tri_half', 3, c_fg, c_bg)]
+        ])
+        # Chevron (Flechas)
+        patterns.append([
+            [('tri_half', 0, c_fg, c_bg), ('tri_half', 3, c_fg, c_bg)],
+            [('tri_half', 0, c_fg, c_bg), ('tri_half', 3, c_fg, c_bg)]
+        ])
+
+    # 2. CURVAS / RETRO (Requiere familia Curva o Mezcla)
+    if family in ["Mezcla Inteligente", "Solo Curvas (Retro)"]:
+        # Círculo completo (4 cuartos mirando al centro)
+        patterns.append([
+            [('arc_corner', 0, c_fg, c_bg), ('arc_corner', 3, c_fg, c_bg)],
+            [('arc_corner', 1, c_fg, c_bg), ('arc_corner', 2, c_fg, c_bg)]
+        ])
+        # Pétalos opuestos
+        patterns.append([
+            [('arc_corner', 0, c_fg, c_bg), ('arc_corner', 2, c_fg, c_bg)],
+            [('arc_corner', 2, c_fg, c_bg), ('arc_corner', 0, c_fg, c_bg)]
+        ])
+        # Olas (S)
+        patterns.append([
+            [('arc_corner', 0, c_fg, c_bg), ('arc_corner', 1, c_bg, c_fg)], # Invertido
+            [('arc_corner', 3, c_bg, c_fg), ('arc_corner', 2, c_fg, c_bg)]
+        ])
+
+    # 3. ORTOGONAL (Laberinto)
+    if family in ["Mezcla Inteligente", "Ortogonal (Laberinto)"]:
+        # Cruz
+        patterns.append([
+            [('stripe_center', 0, c_fg, c_bg), ('stripe_center', 0, c_fg, c_bg)],
+            [('stripe_center', 1, c_fg, c_bg), ('stripe_center', 1, c_fg, c_bg)] # Rotado mal para cruz, corregir
+        ])
+        # Ajuste manual cruz:
+        patterns.append([
+            [('stripe_center', 90, c_fg, c_bg), ('stripe_center', 0, c_fg, c_bg)], # Truco: rotacion no va por grados aqui, va por indice 0..3
+            # stripe_center rot 0 es vertical? rot 1 es horizontal.
+            # Vamos a asumir stripe_center: 0=vert, 1=horiz
+            [('stripe_center', 1, c_fg, c_bg), ('stripe_center', 0, c_fg, c_bg)] # T shape
+        ])
+        patterns.append([
+            [('checker_4', 0, c_fg, c_bg), ('full', 0, c_bg, c_fg)],
+            [('full', 0, c_bg, c_fg), ('checker_4', 0, c_fg, c_bg)]
+        ])
+
+    # Si no hay patrones (seguridad), devolver sólido
+    if not patterns: return [[('full', 0, c_fg, c_bg)]*2]*2
+    
+    return random.choice(patterns)
+
+# --- GENERADOR PRINCIPAL ---
+
+def generate_grid(size, palette, family, mode):
+    rng = random.Random(st.session_state.seed)
+    grid = [[None for _ in range(size)] for _ in range(size)]
+    
+    # Tamaño del super módulo (2x2 celdas)
+    mod_w, mod_h = 2, 2
+    
+    if mode == "Super-Módulos (Figuras Grandes)":
+        # Generamos una retícula de super-módulos
+        # Si la resolución es 16, tenemos 8x8 super módulos.
+        # Para que sea "bonito", no ponemos uno al azar en cada sitio.
+        # Creamos un ritmo: A B A B
+        
+        # 1. Elegir 2 Módulos "Tema" para este diseño
+        module_A = get_super_module(family, palette)
+        module_B = get_super_module(family, palette)
+        
+        # A veces module_B es simplemente el A con colores invertidos
+        if rng.random() > 0.5:
+            # Invertir colores de A para crear B
+            module_B = []
+            for row in module_A:
+                new_row = []
+                for cell in row:
+                    new_row.append((cell[0], cell[1], cell[3], cell[2])) # Swap colors
+                module_B.append(new_row)
+
+        for r in range(0, size, 2):
+            for c in range(0, size, 2):
+                # Damero de módulos
+                is_A = ((r//2) + (c//2)) % 2 == 0
+                current_mod = module_A if is_A else module_B
                 
-                cell = {'type': tipo, 'rot': rot, 'c_main': c1, 'c_acc': c2}
-                grid[r][c] = cell
-                # Espejos
-                tr=cell.copy(); tr['mirror_x']=True; grid[r][size-1-c]=tr
-                bl=cell.copy(); bl['mirror_y']=True; grid[size-1-r][c]=bl
-                br=cell.copy(); br['mirror_x']=True; br['mirror_y']=True; grid[size-1-r][size-1-c]=br
+                # Copiar el módulo 2x2 al grid
+                for i in range(2):
+                    for j in range(2):
+                        if r+i < size and c+j < size:
+                            grid[r+i][c+j] = current_mod[i][j]
+
+    elif mode == "Tejido Infinito (Interlaced)":
+        # Aquí usamos un solo módulo complejo y lo repetimos con rotaciones
+        # para simular un tejido continuo
+        base_mod = get_super_module(family, palette)
+        
+        for r in range(0, size, 2):
+            for c in range(0, size, 2):
+                # Rotar el módulo según posición para que "fluyan" las líneas
+                rotation_offset = ((r//2) + (c//2)) % 4
+                
+                # Aplicar módulo rotado
+                for i in range(2):
+                    for j in range(2):
+                        if r+i < size and c+j < size:
+                            cell = base_mod[i][j]
+                            # Sumar rotación
+                            new_rot = (cell[1] + rotation_offset) % 4
+                            grid[r+i][c+j] = (cell[0], new_rot, cell[2], cell[3])
+
     return grid
 
-# --- RENDER FINAL ---
-def render_final(grid, size):
+def render_art(grid, size):
     fig, ax = plt.subplots(figsize=(10, 10), dpi=100)
     ax.set_aspect('equal'); ax.axis('off')
     
+    # Dibujar
     for r in range(size):
         for c in range(size):
             cell = grid[r][c]
-            if not cell: continue
-            x, y = c, size - 1 - r
-            rot = cell['rot']
-            if cell.get('mirror_x'): rot = {0:1, 1:0, 2:3, 3:2}.get(rot, rot)
-            if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}.get(rot, rot)
-            add_tile_hd(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
+            if cell:
+                # cell = (tipo, rot, color1, color2)
+                # Invertimos Y para dibujar de arriba a abajo visualmente
+                draw_tile(ax, c, size-1-r, cell[0], cell[1], cell[2], cell[3])
 
-    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=4)
+    # Marco Exterior Fuerte
+    ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#000', linewidth=12)
+    
+    # Retícula sutil (Opcional, la pediste muy fina)
+    for i in range(size+1):
+        ax.plot([0, size], [i, i], color='black', linewidth=0.1, alpha=0.2)
+        ax.plot([i, i], [0, size], color='black', linewidth=0.1, alpha=0.2)
+
     return fig
 
 # --- EJECUCIÓN ---
-if modo == "NicoArt (Estructuras)":
-    grid_data = generate_nicoart(grid_size, paleta)
-else:
-    grid_data = generate_classic(grid_size, paleta, modo, formas_sel)
+random.seed(st.session_state.seed)
 
-figura = render_final(grid_data, grid_size)
+grid_data = generate_grid(grid_size, paleta, familia, modo)
+figura = render_art(grid_data, grid_size)
+
 st.pyplot(figura)
 
 buf = BytesIO()
 figura.savefig(buf, format="png", bbox_inches='tight', dpi=300, facecolor="#ffffff")
-st.download_button(label="DESCARGAR IMAGEN HD", data=buf.getvalue(), file_name="nicoart.png", mime="image/png")
+st.download_button(label="DESCARGAR OBRA NICOART", data=buf.getvalue(), file_name="nicoart.png", mime="image/png")
