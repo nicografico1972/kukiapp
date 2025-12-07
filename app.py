@@ -7,7 +7,7 @@ import random
 from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="KUKIAPP - Bauhaus HD", layout="centered")
+st.set_page_config(page_title="NICOESCHER", layout="centered")
 
 # --- ESTILOS CSS (UI MÓVIL MEJORADA) ---
 st.markdown("""
