@@ -1,249 +1,241 @@
 import streamlit as st
 import random
-import math
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
+import io
 
-# --- CONFIGURACIÓN DE LA PÁGINA (MODO FULL) ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Patrones Pro Studio - CHAOS",
-    page_icon="⚡",
-    layout="wide"
+    page_title="BAUHAUS PURO // GENERADOR",
+    page_icon="⬛",
+    layout="centered"
 )
 
-# --- PALETAS DE COLORES (NUEVAS) ---
+# --- CSS PARA ESTÉTICA BRUTALISTA/BAUHAUS ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    h1 {
+        font-family: 'Archivo Black', sans-serif;
+        text-transform: uppercase;
+        font-size: 3em !important;
+        color: #111;
+        border-bottom: 5px solid #111;
+        padding-bottom: 10px;
+    }
+    .stButton>button {
+        background-color: #111 !important;
+        color: white !important;
+        font-family: 'Archivo Black', sans-serif !important;
+        text-transform: uppercase;
+        font-size: 1.2em !important;
+        border-radius: 0px !important;
+        border: none !important;
+        padding: 1em 2em !important;
+    }
+    .stButton>button:hover {
+        background-color: #E31C24 !important; /* Rojo Bauhaus al pasar el mouse */
+        color: white !important;
+    }
+    /* Ocultar elementos extra de Streamlit */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
+# --- DEFINICIÓN DE PALETAS SOLICITADAS ---
 PALETTES = {
-    "Clásica (Bauhaus)": [
-        "#E63946", "#F1FAEE", "#A8DADC", "#457B9D", "#1D3557",
-        "#2A9D8F", "#E9C46A", "#F4A261", "#264653"
+    "🏛️ Bauhaus Clásica": [
+        "#E31C24", # Rojo
+        "#006BA6", # Azul
+        "#FFD500", # Amarillo
+        "#111111", # Negro
+        "#F2F2F2"  # Blanco roto
     ],
-    "Industrial (Cemento & Peligro)": [
-        "#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429", 
-        "#FFD700", "#14213D", "#E5E5E5", "#000000"
+    "🍋 Cítricas": [
+        "#D3E629", # Lima
+        "#E9EA2E", # Limón fuerte
+        "#F48120", # Naranja
+        "#E22C26", # Pomelo rojo
+        "#FFFFFF"  # Blanco
     ],
-    "Fluorescente (Neon/Cyber)": [
-        "#FF00FF", "#00FF00", "#00FFFF", "#FFFF00", "#FF0099", 
-        "#7900FF", "#FF3300", "#121212", "#FFFFFF"
+    "💊 Vitamina": [
+        "#FF0055", # Rosa fuerte
+        "#00C9A7", # Verde menta vibrante
+        "#FFD700", # Oro
+        "#8338EC", # Violeta
+        "#FFFFFF"  # Blanco
     ],
-    "Vitaminas (Cítricos & Fruta)": [
-        "#FF7D00", "#FFD000", "#C1FF00", "#00C9A7", "#FF0055", 
-        "#FF9900", "#FFE600", "#8338EC", "#3A86FF"
+    "🏢 Grises (Hormigón)": [
+        "#111111", "#333333", "#555555", "#777777", "#999999", "#CCCCCC", "#E5E5E5"
     ],
-    "1 Tinta (Blanco y Negro)": ["#FFFFFF", "#000000"]
+    "⬛ Solo Negro (Puro)": [
+        "#000000", "#FFFFFF"
+    ],
+    "🍂 Ocres y Mostaza": [
+        "#D19526", # Mostaza
+        "#A85B25", # Teja
+        "#6E3C1D", # Marrón oscuro
+        "#E0C28A", # Arena
+        "#211E1A"  # Casi negro
+    ]
 }
 
-# --- CLASE GENERADORA ---
-class ChaosGenerator:
+# --- MOTOR DE GEOMETRÍA PURA ---
+class BauhausEngine:
     def __init__(self, size=800):
         self.size = size
 
-    def _get_colors(self, palette_name, n, seed):
-        """Devuelve colores de la paleta seleccionada."""
-        random.seed(seed)
-        base_colors = PALETTES[palette_name]
+    def _draw_large_element(self, draw, colors):
+        """Dibuja un elemento geométrico grande que domina la composición."""
+        color = random.choice(colors)
+        shape_type = random.choice(['circle', 'rect', 'triangle', 'thick_line', 'arc'])
+        s = self.size
         
-        # Selección segura
-        palette = random.sample(base_colors, min(n, len(base_colors)))
-        while len(palette) < 3:
-            palette.append(random.choice(palette))
-        return palette
-
-    def _safe_draw_rect(self, draw, x, y, w, h, color):
-        if w <= 0 or h <= 0: return
-        draw.rectangle([x, y, x+w, y+h], fill=color)
-
-    def _draw_element(self, draw, x, y, s, colors, thickness, seed, style_mode):
-        random.seed(seed)
+        # Usamos una grilla gruesa invisible (8x8) para anclar las formas
+        # esto da la sensación de orden dentro del caos.
+        grid_step = s // 8
+        x1 = random.randint(0, 8) * grid_step
+        y1 = random.randint(0, 8) * grid_step
+        x2 = random.randint(0, 8) * grid_step
+        y2 = random.randint(0, 8) * grid_step
         
-        # Mezclar colores para esta celda
-        c_bg, c_fg, c_acc = random.sample(colors, 3) if len(colors) >= 3 else (colors[0], colors[1], colors[0])
+        # Asegurar que las coordenadas no sean iguales
+        if x1 == x2: x2 += grid_step * random.choice([-2, 2])
+        if y1 == y2: y2 += grid_step * random.choice([-2, 2])
         
-        t = max(1, min(thickness, int(s * 0.25)))
+        # Normalizar coordenadas para dibujar
+        lx, rx = min(x1, x2), max(x1, x2)
+        ty, by = min(y1, y2), max(y1, y2)
 
-        # Pools de formas
-        bauhaus = ['quarter_leaf', 'split_circle', 'striped_circle', 'eye', 'arch', 'circle_hollow']
-        memphis = ['corner_stairs', 'diagonal_split', 'grid_dots', 'triangle_split', 'checker', 'frame']
-        
-        if style_mode == "Bauhaus (Curvas)":
-            shape = random.choice(bauhaus)
-        elif style_mode == "Memphis (Geo/Texture)":
-            shape = random.choice(memphis)
-        else:
-            shape = random.choice(bauhaus + memphis)
+        if shape_type == 'circle':
+            # Círculos que a veces se salen del lienzo
+            margin = random.randint(-s//4, s//4)
+            draw.ellipse([lx-margin, ty-margin, rx+margin, by+margin], fill=color)
+            
+        elif shape_type == 'rect':
+            # Rectángulos sólidos o marcos gruesos
+            if random.random() > 0.7:
+                # Marco
+                thickness = random.choice([grid_step//2, grid_step])
+                draw.rectangle([lx, ty, rx, by], outline=color, width=thickness)
+            else:
+                # Sólido
+                draw.rectangle([lx, ty, rx, by], fill=color)
 
-        # FONDO
-        draw.rectangle([x, y, x+s, y+s], fill=c_bg)
-
-        # FORMAS
-        if shape == 'quarter_leaf':
-            draw.pieslice([x-s, y-s, x+s, y+s], 0, 90, fill=c_fg)
-            draw.pieslice([x, y, x+s*2, y+s*2], 180, 270, fill=c_fg)
-
-        elif shape == 'split_circle':
-            pad = s * 0.1
-            bbox = [x+pad, y+pad, x+s-pad, y+s-pad]
-            draw.pieslice(bbox, 90, 270, fill=c_fg)
-            draw.pieslice(bbox, 270, 450, fill=c_acc)
-
-        elif shape == 'striped_circle':
-            pad = s * 0.1
-            draw.ellipse([x+pad, y+pad, x+s-pad, y+s-pad], fill=c_fg)
-            lw = max(1, int(t/2))
-            for ly in range(int(y+pad), int(y+s-pad), lw*3):
-                draw.line([(x+pad, ly), (x+s-pad, ly)], fill=c_acc, width=lw)
-
-        elif shape == 'eye':
-            draw.pieslice([x-s/2, y, x+s*1.5, y+s], 0, 180, fill=c_fg)
-            draw.pieslice([x-s/2, y, x+s*1.5, y+s], 180, 360, fill=c_fg)
-            r = s * 0.15
-            draw.ellipse([x+s/2-r, y+s/2-r, x+s/2+r, y+s/2+r], fill=c_acc)
-
-        elif shape == 'arch':
-            m = s * 0.2
-            draw.rectangle([x+m, y+s/2, x+s-m, y+s], fill=c_fg)
-            draw.pieslice([x+m, y+m, x+s-m, y+s-m + (s/2)], 180, 360, fill=c_fg)
-        
-        elif shape == 'circle_hollow':
-             pad = s * 0.15
-             draw.ellipse([x+pad, y+pad, x+s-pad, y+s-pad], outline=c_fg, width=int(t))
-
-        elif shape == 'corner_stairs':
-            step_w = s / 4
-            for i in range(4):
-                self._safe_draw_rect(draw, x, y + (i*step_w), s - (i*step_w), step_w, c_fg)
-
-        elif shape == 'diagonal_split':
-            draw.polygon([(x, y+s), (x+s, y), (x+s, y+s)], fill=c_fg)
+        elif shape_type == 'thick_line':
+            # Líneas muy gruesas diagonales o rectas
+            thickness = random.choice([grid_step//4, grid_step//2, grid_step])
+            # A veces forzamos líneas rectas perfectas
             if random.random() > 0.5:
-                r = s * 0.2
-                draw.ellipse([x+s/2-r, y+s/2-r, x+s/2+r, y+s/2+r], fill=c_acc)
+                if random.random() > 0.5: x2 = x1 # Vertical
+                else: y2 = y1 # Horizontal
+            draw.line([(x1, y1), (x2, y2)], fill=color, width=thickness)
+            
+        elif shape_type == 'triangle':
+            # Triángulos grandes anclados a esquinas o puntos de grilla
+            p3x = random.randint(0, 8) * grid_step
+            p3y = random.randint(0, 8) * grid_step
+            draw.polygon([(x1, y1), (x2, y2), (p3x, p3y)], fill=color)
 
-        elif shape == 'grid_dots':
-            cols = 3
-            step = s / cols
-            rad = step / 4
-            for i in range(cols):
-                for j in range(cols):
-                    cx = x + (i * step) + step/2
-                    cy = y + (j * step) + step/2
-                    draw.ellipse([cx-rad, cy-rad, cx+rad, cy+rad], fill=c_fg)
+        elif shape_type == 'arc':
+             # Arcos estilo Bauhaus (cuartos de círculo grueso)
+             thickness = grid_step * random.randint(1, 3)
+             # Dibujamos un círculo grande y grueso sin relleno
+             margin = thickness // 2
+             draw.ellipse([lx, ty, rx, by], outline=color, width=thickness)
 
-        elif shape == 'triangle_split':
-            draw.polygon([(x,y), (x+s,y), (x,y+s)], fill=c_fg)
-            draw.polygon([(x+s,y+s), (x+s,y), (x,y+s)], fill=c_acc)
 
-        elif shape == 'checker':
-            half = s // 2
-            self._safe_draw_rect(draw, x, y, half, half, c_fg)
-            self._safe_draw_rect(draw, x+half, y+half, s-half, s-half, c_fg)
+    def generate(self, palette_name, n_colors, complexity_level):
+        # 1. Preparar colores
+        full_palette = PALETTES[palette_name]
+        
+        if palette_name == "⬛ Solo Negro (Puro)":
+            # Modo estricto B/N
+            bg_color = "#FFFFFF"
+            active_colors = ["#000000"]
+        else:
+            # Selección aleatoria de la paleta elegida
+            current_palette = random.sample(full_palette, min(n_colors, len(full_palette)))
+            # Asegurar contraste: el primer color es fondo, el resto para elementos
+            bg_color = current_palette[0]
+            active_colors = current_palette[1:]
+            if not active_colors: active_colors = ["#000000"] # Fallback si n_colors es 1
 
-        elif shape == 'frame':
-            margin = int(t/2)
-            draw.rectangle([x+margin, y+margin, x+s-margin, y+s-margin], outline=c_fg, width=int(t))
-
-    def generate(self, palette, num_colors, thickness, grid, seed, style):
-        image = Image.new("RGB", (self.size, self.size), "white")
+        # 2. Lienzo
+        image = Image.new("RGB", (self.size, self.size), bg_color)
         draw = ImageDraw.Draw(image)
         
-        colors = self._get_colors(palette, num_colors, seed)
-        cell_size = self.size // grid
-        
-        for i in range(grid):
-            for j in range(grid):
-                x = i * cell_size
-                y = j * cell_size
-                # Semilla única y caótica
-                cell_seed = seed + (i * 9999) + (j * 7777)
-                self._draw_element(draw, x, y, cell_size, colors, thickness, cell_seed, style)
+        # 3. Definir número de elementos según complejidad
+        # Mapeamos el slider (1-10) a una cantidad de formas (ej. 3 a 25)
+        num_elements = int(complexity_level * 2.5) + random.randint(1, 3)
+
+        # 4. Bucle de generación (Sin semilla, caos puro)
+        for _ in range(num_elements):
+            self._draw_large_element(draw, active_colors)
+            
+            # A veces (10%) invertimos los colores a mitad del proceso para efecto dramático
+            if random.random() > 0.90 and palette_name != "⬛ Solo Negro (Puro)":
+                 image = ImageOps.invert(image)
+                 draw = ImageDraw.Draw(image)
 
         return image
 
 # --- INTERFAZ DE USUARIO ---
 
-st.title("⚡ Patrones Pro Studio")
-st.caption("by nico.bastida | CHAOS EDITION")
+st.title("BAUHAUS PURO // VANGUARDIA")
+st.markdown("Generador de ilustraciones geométricas únicas en 1x1.")
 
-# Estilos CSS para el botón gigante
-st.markdown("""
-<style>
-div.stButton > button:first-child {
-    background-color: #111;
-    color: #00FF00;
-    font-size: 24px;
-    font-weight: bold;
-    border: 2px solid #00FF00;
-    border-radius: 0px;
-    height: 4em;
-    width: 100%;
-    text-transform: uppercase;
-    transition: all 0.3s;
-}
-div.stButton > button:first-child:hover {
-    background-color: #00FF00;
-    color: #111;
-    box-shadow: 0 0 20px #00FF00;
-}
-</style>
-""", unsafe_allow_html=True)
-
-col_izq, col_der = st.columns([1, 2])
-
-with col_izq:
-    st.markdown("### 🎛️ Controles")
+# Controles en la barra lateral
+with st.sidebar:
+    st.header("CONTROL DE COMPOSICIÓN")
     
-    # Selector de Paleta
-    palette_choice = st.selectbox(
-        "🎨 Paleta de Colores",
-        list(PALETTES.keys()),
-        index=0
-    )
+    palette_choice = st.selectbox("PALETA CROMÁTICA", list(PALETTES.keys()), index=0)
     
-    # Controles físicos
-    style_mode = st.selectbox("Estilo", ["Mix Complejo", "Bauhaus (Curvas)", "Memphis (Geo)"])
-    
-    if palette_choice != "1 Tinta (Blanco y Negro)":
-        num_colors = st.slider("Cantidad de Colores", 2, 8, 4)
+    # Lógica para bloquear el selector de cantidad si es B/N
+    if palette_choice == "⬛ Solo Negro (Puro)":
+        st.markdown("**MODO B/N ACTIVO**")
+        num_colors_slider = 2 # Valor dummy
+        st.caption("Colores fijados a Blanco y Negro estricto.")
     else:
-        num_colors = 2
-        st.info("Modo B/N Activo")
+        # Calculamos el máximo de colores disponibles en la paleta elegida
+        max_cols = len(PALETTES[palette_choice])
+        num_colors_slider = st.slider("CANTIDAD DE COLORES", min_value=2, max_value=max_cols, value=max(2, max_cols-1))
 
-    thickness = st.slider("Grosor", 5, 50, 15)
-    complexity = st.select_slider("Resolución Grilla", options=[2, 4, 5, 6, 8, 10], value=6)
-    
+    complexity_slider = st.slider("COMPLEJIDAD GEOMÉTRICA", min_value=1, max_value=10, value=5, help="1 = Minimalista, 10 = Caos Constructivista")
+
     st.markdown("---")
-    
-    # GESTIÓN DEL CAOS (SEMILLA OCULTA)
-    # Inicializamos una semilla random en la sesión si no existe
-    if 'chaos_seed' not in st.session_state:
-        st.session_state.chaos_seed = random.randint(0, 999999)
+    st.markdown("Cada clic genera una obra irrepetible.")
 
-    # BOTÓN GIGANTE
-    if st.button("🎲 GENERAR NUEVO CAOS"):
-        st.session_state.chaos_seed = random.randint(0, 999999)
-
-with col_der:
-    generator = ChaosGenerator(size=800)
+# Botón principal (Fuera de la sidebar para protagonismo)
+if st.button("GENERAR OBRA ÚNICA AHORA"):
     
-    # Usamos la semilla de la sesión (oculta al usuario)
-    img = generator.generate(
-        palette=palette_choice,
-        num_colors=num_colors,
-        thickness=thickness,
-        grid=complexity,
-        seed=st.session_state.chaos_seed,
-        style=style_mode
-    )
+    engine = BauhausEngine(size=800)
     
-    st.image(img, use_container_width=True)
-    
-    # Descarga
-    import io
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    byte_im = buf.getvalue()
-    
-    st.download_button(
-        label="⬇️ DESCARGAR PNG",
-        data=byte_im,
-        file_name=f"patron_chaos_{st.session_state.chaos_seed}.png",
-        mime="image/png"
-    )
+    with st.spinner("CONSTRUYENDO GEOMETRÍA..."):
+        # Llamada directa sin semillas
+        img = engine.generate(
+            palette_name=palette_choice,
+            n_colors=num_colors_slider,
+            complexity_level=complexity_slider
+        )
+        
+        st.image(img, caption="Composición Geométrica 1x1", use_container_width=True)
+        
+        # Preparar descarga
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        byte_im = buf.getvalue()
+        
+        st.download_button(
+            label="DESCARGAR PNG (800x800)",
+            data=byte_im,
+            file_name="bauhaus_puro_obra.png",
+            mime="image/png"
+        )
+else:
+    st.info("Define los parámetros y pulsa el botón para crear tu primera obra.")
