@@ -7,7 +7,7 @@ import random
 from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="KUKIAPP - Bauhaus", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="blocks", layout="centered", initial_sidebar_state="collapsed")
 
 # --- CSS EXTREMO PARA MÓVIL ---
 st.markdown("""
@@ -81,7 +81,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CABECERA ---
-st.markdown("<h1>KUKIAPP</h1>", unsafe_allow_html=True)
+st.markdown("<h1>blocks</h1>", unsafe_allow_html=True)
 st.markdown("<p class='signature'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
 # --- INICIALIZAR ESTADO (SEMILLA CAÓTICA) ---
@@ -234,7 +234,7 @@ figura.savefig(buf_png, format="png", bbox_inches='tight', pad_inches=0.1, dpi=3
 st.download_button(
     label="⬇️ Descargar en PNG",
     data=buf_png.getvalue(),
-    file_name=f"kuki_{st.session_state.seed}.png",
+    file_name=f"blocks_{st.session_state.seed}.png",
     mime="image/png"
 )
 
@@ -243,6 +243,6 @@ figura.savefig(buf_svg, format="svg", bbox_inches='tight', pad_inches=0.1, facec
 st.download_button(
     label="⬇️ Descargar en Vector (SVG)",
     data=buf_svg.getvalue(),
-    file_name=f"kuki_{st.session_state.seed}.svg",
+    file_name=f"blocks_{st.session_state.seed}.svg",
     mime="image/svg+xml"
 )
