@@ -6,7 +6,7 @@ import random
 from io import BytesIO
 
 # --- CONFIGURACION DE PAGINA ---
-st.set_page_config(page_title="SISTEMA MODULAR", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="SISTEMA MODULAR", layout="wide", initial_sidebar_state="expanded")
 
 # --- ESTILOS CSS BRUTALISTAS ---
 st.markdown("""
@@ -17,32 +17,30 @@ st.markdown("""
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
         font-weight: 900; 
         color: #111; 
-        text-align: center;
         margin-bottom: 0px;
-        font-size: 3rem !important;
+        font-size: 3.5rem !important;
         text-transform: uppercase;
         letter-spacing: -2px;
     }
     .signature {
-        text-align: center;
         color: #111;
         font-weight: bold;
-        font-size: 14px;
-        margin-top: -5px;
-        margin-bottom: 25px;
+        font-size: 16px;
+        margin-top: -10px;
+        margin-bottom: 30px;
         text-transform: uppercase;
     }
 
-    /* BOTON PRINCIPAL */
+    /* BOTON PRINCIPAL (BARRA LATERAL) */
     .stButton>button:first-child { 
         width: 100%; 
         border: 4px solid #111 !important; 
         border-radius: 0px !important;
         font-weight: 900 !important; 
-        font-size: 20px !important;
+        font-size: 18px !important;
         background-color: #111 !important; 
         color: #FFF !important; 
-        padding: 20px 0px !important; 
+        padding: 15px 0px !important; 
         text-transform: uppercase;
         transition: all 0.2s;
     }
@@ -65,27 +63,23 @@ st.markdown("""
     .stDownloadButton>button:hover {
         background-color: #f0f0f0 !important;
     }
-
-    /* ACORDEON CONTROLES */
-    .streamlit-expanderHeader {
+    
+    /* ESTILOS BARRA LATERAL */
+    [data-testid="stSidebar"] {
         background-color: #f8f9fa;
-        border: 2px solid #111;
-        font-weight: bold;
-        text-transform: uppercase;
+        border-right: 2px solid #111;
     }
     </style>
 """, unsafe_allow_html=True)
-
-# --- CABECERA ---
-st.markdown("<h1>SISTEMA MODULAR</h1>", unsafe_allow_html=True)
-st.markdown("<p class='signature'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
 # --- ESTADO ---
 if 'seed' not in st.session_state:
     st.session_state.seed = random.randint(0, 999999)
 
-# --- CONTROLES ---
-with st.expander("PARAMETROS DE DISENO", expanded=False):
+# --- PANEL DE CONTROL LATERAL (SIEMPRE VISIBLE) ---
+with st.sidebar:
+    st.markdown("### PANEL DE CONTROL")
+    st.markdown("---")
     
     n_colores = st.slider("CANTIDAD DE TINTAS", 1, 5, 3)
     
@@ -98,21 +92,22 @@ with st.expander("PARAMETROS DE DISENO", expanded=False):
             c = st.color_picker(f"C{i+1}", defaults[i])
             colores_usuario.append(c)
 
-    c_geo1, c_geo2 = st.columns(2)
-    with c_geo1:
-        complejidad = st.select_slider("RESOLUCION GRILLA", options=[2, 4, 6, 8, 10, 12], value=6)
-    with c_geo2:
-        densidad = st.slider("DENSIDAD DE FORMAS", 0.1, 1.0, 0.95)
+    st.markdown("---")
+    complejidad = st.select_slider("RESOLUCION GRILLA", options=[2, 4, 6, 8, 10, 12], value=6)
+    densidad = st.slider("DENSIDAD DE FORMAS", 0.1, 1.0, 0.95)
+    
+    st.markdown("---")
+    if st.button("GENERAR NUEVA ESTRUCTURA"):
+        st.session_state.seed = random.randint(0, 999999)
 
-# --- BOTON GENERAR ---
-if st.button("GENERAR NUEVA ESTRUCTURA"):
-    st.session_state.seed = random.randint(0, 999999)
+# --- AREA PRINCIPAL (LIENZO) ---
+st.markdown("<h1>SISTEMA MODULAR</h1>", unsafe_allow_html=True)
+st.markdown("<p class='signature'>by Nico.Bastida</p>", unsafe_allow_html=True)
 
-# --- MOTOR DE FORMAS (PIEZAS DEL ROMPECABEZAS) ---
+# --- MOTOR DE FORMAS ---
 def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
     
-    # FONDO Y BORDE ESTRUCTURAL
     ax.add_patch(patches.Rectangle((x, y), 1, 1, color='#FFFFFF', zorder=0))
     ax.add_patch(patches.Rectangle((x, y), 1, 1, fill=False, edgecolor='#111111', linewidth=1.5, zorder=10))
 
@@ -138,7 +133,6 @@ def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
         ax.add_patch(patches.Rectangle((x+0.3, y+0.3), 0.4, 0.4, color=color_acento))
 
     elif tipo == 'truchet_lines':
-        # Arcos continuos para crear patrones tipo laberinto/cuanticos
         w1 = patches.Wedge((x, y), 0.6, 0, 90, width=0.2, color=color_forma)
         w2 = patches.Wedge((x+1, y+1), 0.6, 180, 270, width=0.2, color=color_forma)
         w1.set_transform(tr)
@@ -147,7 +141,6 @@ def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
         ax.add_patch(w2)
 
     elif tipo == 'pill_cross':
-        # Pildoras cruzadas
         r1 = patches.FancyBboxPatch((x+0.35, y+0.1), 0.3, 0.8, boxstyle="round,pad=0.05", color=color_forma)
         r2 = patches.FancyBboxPatch((x+0.1, y+0.35), 0.8, 0.3, boxstyle="round,pad=0.05", color=color_acento)
         r1.set_transform(tr)
@@ -156,14 +149,12 @@ def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
         ax.add_patch(r2)
 
     elif tipo == 'half_split':
-        # Rectangulo partido
         r = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
         r.set_transform(tr)
         ax.add_patch(r)
 
 def generate_grid(size, user_colors, density):
     seed_size = size // 2
-    # Catalogo de formas seleccionadas para simetria perfecta
     tile_types = [
         'circle', 'quarter_circle', 'triangle', 'bullseye', 
         'concentric_squares', 'truchet_lines', 'pill_cross', 'half_split', 'solid'
@@ -186,26 +177,21 @@ def generate_grid(size, user_colors, density):
             row.append({'type': tipo, 'rot': rot, 'c_main': c_main, 'c_acc': c_acc})
         seed.append(row)
 
-    # Generacion de los 4 cuadrantes (Espejo X e Y)
     full_grid = [[None for _ in range(size)] for _ in range(size)]
     for r in range(seed_size):
         for c in range(seed_size):
             cell = seed[r][c]
             
-            # Cuadrante 1 (Arriba Izquierda)
             full_grid[r][c] = cell 
             
-            # Cuadrante 2 (Arriba Derecha)
             tr_cell = cell.copy()
             tr_cell['mirror_x'] = True 
             full_grid[r][size - 1 - c] = tr_cell 
             
-            # Cuadrante 3 (Abajo Izquierda)
             bl_cell = cell.copy()
             bl_cell['mirror_y'] = True
             full_grid[size - 1 - r][c] = bl_cell 
             
-            # Cuadrante 4 (Abajo Derecha)
             br_cell = cell.copy()
             br_cell['mirror_x'] = True
             br_cell['mirror_y'] = True
@@ -224,13 +210,11 @@ def render_final(grid, size):
             x, y = c, size - 1 - r
             rot = cell['rot']
             
-            # Correccion matematica de rotacion al hacer espejo
             if cell.get('mirror_x'): rot = {0:1, 1:0, 2:3, 3:2}[rot]
             if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}[rot]
 
             draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    # Marco exterior grueso
     ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111', linewidth=8, zorder=20)
     plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
     plt.margins(0,0)
@@ -241,27 +225,30 @@ random.seed(st.session_state.seed)
 grid_data = generate_grid(complejidad, colores_usuario, densidad)
 figura = render_final(grid_data, complejidad)
 
-st.pyplot(figura, use_container_width=True)
+# --- CENTRAR LA IMAGEN Y BOTONES DE DESCARGA ---
+col_vacia1, col_centro, col_vacia2 = st.columns([1, 2, 1])
 
-# --- EXPORTACION ---
-col_d1, col_d2 = st.columns(2)
-
-with col_d1:
-    buf_png = BytesIO()
-    figura.savefig(buf_png, format="png", bbox_inches='tight', pad_inches=0.05, dpi=300, facecolor="#ffffff")
-    st.download_button(
-        label="DESCARGAR PNG",
-        data=buf_png.getvalue(),
-        file_name=f"modulo_{st.session_state.seed}.png",
-        mime="image/png"
-    )
-
-with col_d2:
-    buf_svg = BytesIO()
-    figura.savefig(buf_svg, format="svg", bbox_inches='tight', pad_inches=0.05, facecolor="#ffffff")
-    st.download_button(
-        label="DESCARGAR SVG",
-        data=buf_svg.getvalue(),
-        file_name=f"modulo_{st.session_state.seed}.svg",
-        mime="image/svg+xml"
-    )
+with col_centro:
+    st.pyplot(figura, use_container_width=True)
+    
+    col_d1, col_d2 = st.columns(2)
+    
+    with col_d1:
+        buf_png = BytesIO()
+        figura.savefig(buf_png, format="png", bbox_inches='tight', pad_inches=0.05, dpi=300, facecolor="#ffffff")
+        st.download_button(
+            label="DESCARGAR PNG",
+            data=buf_png.getvalue(),
+            file_name=f"modulo_{st.session_state.seed}.png",
+            mime="image/png"
+        )
+    
+    with col_d2:
+        buf_svg = BytesIO()
+        figura.savefig(buf_svg, format="svg", bbox_inches='tight', pad_inches=0.05, facecolor="#ffffff")
+        st.download_button(
+            label="DESCARGAR SVG",
+            data=buf_svg.getvalue(),
+            file_name=f"modulo_{st.session_state.seed}.svg",
+            mime="image/svg+xml"
+        )
