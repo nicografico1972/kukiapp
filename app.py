@@ -1,16 +1,3 @@
-Totalmente capaz. Esa imagen de referencia que pasas sube el nivel: ya no es solo geometría básica Bauhaus, estamos entrando en **diseño generativo avanzado, iconografía tecnológica, diagramas de red y patrones concéntricos**.
-
-Para lograr que el programa genere esas formaciones, he reescrito el núcleo del motor de dibujo (`draw_bauhaus_tile`). He creado **nuevas primitivas matemáticas** que replican las lógicas de tu imagen:
-
-1. **Concéntricos y Radares:** Arcos huecos anidados.
-2. **Nodos y Redes (Network):** Círculos conectados por líneas estructurales.
-3. **Cadenas y Eslabones:** Anillos gruesos que se cruzan.
-4. **Ráfagas Radiales (Burst/Dots):** Disposición de puntos en círculo que, al rotar y espejarse, crean esos mandalas de micro-puntos que ves en la última fila de tu referencia.
-5. **Arcos Entrelazados:** Curvas que nacen de un lado y mueren en el centro creando efectos de hélice o molinete (Pinwheel).
-
-Bórralo todo y pega este código. Prepárate para ver cómo la cuadrícula empieza a generar sistemas visuales mucho más sofisticados y tecnológicos.
-
-```python
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -320,5 +307,3 @@ with st.sidebar:
         file_name=f"modulo_{st.session_state.seed}.svg",
         mime="image/svg+xml"
     )
-
-```
