@@ -1,14 +1,28 @@
+Totalmente capaz. Esa imagen de referencia que pasas sube el nivel: ya no es solo geometría básica Bauhaus, estamos entrando en **diseño generativo avanzado, iconografía tecnológica, diagramas de red y patrones concéntricos**.
+
+Para lograr que el programa genere esas formaciones, he reescrito el núcleo del motor de dibujo (`draw_bauhaus_tile`). He creado **nuevas primitivas matemáticas** que replican las lógicas de tu imagen:
+
+1. **Concéntricos y Radares:** Arcos huecos anidados.
+2. **Nodos y Redes (Network):** Círculos conectados por líneas estructurales.
+3. **Cadenas y Eslabones:** Anillos gruesos que se cruzan.
+4. **Ráfagas Radiales (Burst/Dots):** Disposición de puntos en círculo que, al rotar y espejarse, crean esos mandalas de micro-puntos que ves en la última fila de tu referencia.
+5. **Arcos Entrelazados:** Curvas que nacen de un lado y mueren en el centro creando efectos de hélice o molinete (Pinwheel).
+
+Bórralo todo y pega este código. Prepárate para ver cómo la cuadrícula empieza a generar sistemas visuales mucho más sofisticados y tecnológicos.
+
+```python
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import random
+import math
 from io import BytesIO
 
 # --- CONFIGURACION DE PAGINA ---
 st.set_page_config(page_title="nico.bastida", layout="wide", initial_sidebar_state="expanded")
 
-# --- CALLBACK PARA EL BOTON GENERAR (NUEVO) ---
+# --- CALLBACK PARA EL BOTON GENERAR ---
 def generar_nueva_semilla():
     st.session_state.seed = random.randint(0, 999999)
 
@@ -16,16 +30,14 @@ def generar_nueva_semilla():
 if 'seed' not in st.session_state:
     st.session_state.seed = random.randint(0, 999999)
 
-# --- ESTILOS CSS (MODO OSCURO BRUTALISTA MINIMALISTA) ---
+# --- ESTILOS CSS (MINIMALISTA PURO) ---
 st.markdown("""
     <style>
-    /* FONDO NEGRO PURO PARA EL LIENZO PRINCIPAL */
     .main, .block-container { 
         background-color: #000000 !important; 
         padding-top: 1rem !important;
     }
     
-    /* FIRMA MINIMALISTA ARRIBA (REEMPLAZA TITULO GIGANTE) */
     .signature_top {
         color: #FFFFFF !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -37,7 +49,6 @@ st.markdown("""
         text-align: left;
     }
 
-    /* BARRA LATERAL (GRIS INDUSTRIAL CONTRASTE) */
     [data-testid="stSidebar"] {
         background-color: #E5E5E5 !important;
         border-right: 2px solid #FFF;
@@ -47,7 +58,6 @@ st.markdown("""
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
 
-    /* BOTON NUEVO (INFERIOR DERECHA) */
     div.stButton > button {
         border: 4px solid #FFFFFF !important;
         border-radius: 0px !important;
@@ -64,7 +74,6 @@ st.markdown("""
         color: #000000 !important;
     }
 
-    /* BOTONES DE DESCARGA (BARRA LATERAL) */
     .stDownloadButton>button {
         width: 100%;
         border: 2px solid #000000 !important;
@@ -83,7 +92,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- PANEL DE CONTROL LATERAL (SIEMPRE VISIBLE) ---
+# --- PANEL DE CONTROL LATERAL ---
 with st.sidebar:
     st.markdown("### PANEL DE CONTROL")
     st.markdown("---")
@@ -106,23 +115,14 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### DESCARGAR")
     
-    # Renderizamos la figura para guardarla
-    # (Lo hacemos antes de la UI para tener los datos de descarga listos)
-    # generate_grid y render_final se llaman aqui para los botones
-    # pero se vuelven a llamar abajo para mostrar. No es eficiente pero funciona.
-    # En un script profesional se optimizaria el flujo.
     random.seed(st.session_state.seed)
-    
     buf_png = BytesIO()
     buf_svg = BytesIO()
-    
-    # Creamos descargas dummy si no se ha generado nada aun (evita crash)
-    # (pero abajo generamos de verdad)
 
-# --- AREA PRINCIPAL (LIENZO NEGRO) ---
+# --- AREA PRINCIPAL ---
 st.markdown("<p class='signature_top'>nico.bastida</p>", unsafe_allow_html=True)
 
-# --- MOTOR DE FORMAS (PIEZAS DEL ROMPECABEZAS OPTIMIZADAS) ---
+# --- NUEVAS PRIMITIVAS MATEMATICAS AVANZADAS ---
 def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
     tr = transforms.Affine2D().rotate_deg_around(x + 0.5, y + 0.5, rot * 90) + ax.transData
     
@@ -142,18 +142,7 @@ def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
         p.set_transform(tr)
         ax.add_patch(p)
         
-    elif tipo == 'bullseye':
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.45, color=color_forma))
-        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.20, color=color_acento))
-        
-    elif tipo == 'concentric_squares':
-        ax.add_patch(patches.Rectangle((x+0.1, y+0.1), 0.8, 0.8, color=color_forma))
-        ax.add_patch(patches.Rectangle((x+0.3, y+0.3), 0.4, 0.4, color=color_acento))
-        if random.random() > 0.5:
-            ax.add_patch(patches.Rectangle((x+0.4, y+0.4), 0.2, 0.2, color=color_forma))
-
     elif tipo == 'truchet_lines':
-        # Arcos continuos para crear patrones tipo laberinto/cuanticos
         w1 = patches.Wedge((x, y), 0.6, 0, 90, width=0.2, color=color_forma)
         w2 = patches.Wedge((x+1, y+1), 0.6, 180, 270, width=0.2, color=color_forma)
         w1.set_transform(tr)
@@ -161,38 +150,79 @@ def draw_bauhaus_tile(ax, x, y, tipo, rot, color_forma, color_acento):
         ax.add_patch(w1)
         ax.add_patch(w2)
 
-    elif tipo == 'pill_cross':
-        # Pildoras cruzadas
-        r1 = patches.FancyBboxPatch((x+0.35, y+0.1), 0.3, 0.8, boxstyle="round,pad=0.05", color=color_forma)
-        r2 = patches.FancyBboxPatch((x+0.1, y+0.35), 0.8, 0.3, boxstyle="round,pad=0.05", color=color_acento)
-        r1.set_transform(tr)
-        r2.set_transform(tr)
-        ax.add_patch(r1)
-        ax.add_patch(r2)
+    # --- NUEVAS FORMAS INSPIRADAS EN LA IMAGEN DE REFERENCIA ---
 
-    elif tipo == 'half_split':
-        # Rectangulo partido
-        r = patches.Rectangle((x, y), 0.5, 1, color=color_forma)
-        r.set_transform(tr)
-        ax.add_patch(r)
-        
-    elif tipo == 'grid_dots':
-        # Rejilla de micro-puntos Op Art
-        cols = 5
-        step = 1.0 / cols
-        rad = step / 6
-        for i in range(cols):
-            for j in range(cols):
-                cx = x + (i * step) + step/2
-                cy = y + (j * step) + step/2
-                ax.add_patch(patches.Circle((cx, cy), rad, color=color_forma))
+    elif tipo == 'network_nodes':
+        # Nodos conectados por lineas (Estilo conectividad/molecula)
+        # Lineas primero para que queden debajo
+        ax.plot([x+0.2, x+0.8], [y+0.2, y+0.8], color=color_forma, linewidth=8, transform=tr)
+        ax.plot([x+0.2, x+0.8], [y+0.8, y+0.2], color=color_forma, linewidth=8, transform=tr)
+        # Puntos en las intersecciones y centro
+        ax.add_patch(patches.Circle((x+0.5, y+0.5), 0.2, color=color_acento, transform=tr))
+        ax.add_patch(patches.Circle((x+0.2, y+0.2), 0.1, color=color_forma, transform=tr))
+        ax.add_patch(patches.Circle((x+0.8, y+0.8), 0.1, color=color_forma, transform=tr))
+        ax.add_patch(patches.Circle((x+0.2, y+0.8), 0.1, color=color_forma, transform=tr))
+        ax.add_patch(patches.Circle((x+0.8, y+0.2), 0.1, color=color_forma, transform=tr))
+
+    elif tipo == 'concentric_arcs':
+        # Arcos de radar / Ondas
+        w1 = patches.Wedge((x+0.5, y), 0.9, 0, 180, width=0.15, color=color_forma)
+        w2 = patches.Wedge((x+0.5, y), 0.6, 0, 180, width=0.15, color=color_acento)
+        w3 = patches.Wedge((x+0.5, y), 0.3, 0, 180, width=0.15, color=color_forma)
+        w1.set_transform(tr)
+        w2.set_transform(tr)
+        w3.set_transform(tr)
+        ax.add_patch(w1)
+        ax.add_patch(w2)
+        ax.add_patch(w3)
+
+    elif tipo == 'chain_links':
+        # Eslabones o anillos entrelazados
+        w1 = patches.Wedge((x+0.35, y+0.35), 0.25, 0, 360, width=0.12, color=color_forma)
+        w2 = patches.Wedge((x+0.65, y+0.65), 0.25, 0, 360, width=0.12, color=color_acento)
+        w1.set_transform(tr)
+        w2.set_transform(tr)
+        ax.add_patch(w1)
+        ax.add_patch(w2)
+
+    elif tipo == 'radial_burst':
+        # Corona de puntos radiales
+        cx, cy = x + 0.5, y + 0.5
+        radio_anillo = 0.35
+        for i in range(8):
+            angulo = i * (math.pi / 4)
+            px = cx + radio_anillo * math.cos(angulo)
+            py = cy + radio_anillo * math.sin(angulo)
+            ax.add_patch(patches.Circle((px, py), 0.08, color=color_forma, transform=tr))
+        # Centro vacio o con punto de contraste
+        if random.random() > 0.5:
+            ax.add_patch(patches.Circle((cx, cy), 0.15, color=color_acento, transform=tr))
+
+    elif tipo == 'split_ring':
+        # Anillo partido / C (Efecto op art al girar)
+        w1 = patches.Wedge((x+0.5, y+0.5), 0.4, 90, 270, width=0.2, color=color_forma)
+        w2 = patches.Wedge((x+0.5, y+0.5), 0.4, 270, 450, width=0.2, color=color_acento)
+        w1.set_transform(tr)
+        w2.set_transform(tr)
+        ax.add_patch(w1)
+        ax.add_patch(w2)
+
+    elif tipo == 'pinwheel':
+        # Molinete o aspas
+        p1 = patches.Wedge((x+0.5, y+0.5), 0.4, 0, 90, color=color_forma)
+        p2 = patches.Wedge((x+0.5, y+0.5), 0.4, 180, 270, color=color_acento)
+        p1.set_transform(tr)
+        p2.set_transform(tr)
+        ax.add_patch(p1)
+        ax.add_patch(p2)
 
 def generate_grid(size, user_colors, density):
     seed_size = size // 2
-    # Catalogo de formas seleccionadas expandido para mas variacion "casual"
+    # Catalogo actualizado con las nuevas topologias
     tile_types = [
-        'circle', 'quarter_circle', 'triangle', 'bullseye', 
-        'concentric_squares', 'truchet_lines', 'pill_cross', 'half_split', 'grid_dots', 'solid'
+        'circle', 'quarter_circle', 'triangle', 'truchet_lines', 
+        'network_nodes', 'concentric_arcs', 'chain_links', 
+        'radial_burst', 'split_ring', 'pinwheel', 'solid'
     ]
     
     random.seed(st.session_state.seed)
@@ -218,20 +248,16 @@ def generate_grid(size, user_colors, density):
         for c in range(seed_size):
             cell = seed[r][c]
             
-            # Cuadrante 1 (Arriba Izquierda)
             full_grid[r][c] = cell 
             
-            # Cuadrante 2 (Arriba Derecha)
             tr_cell = cell.copy()
             tr_cell['mirror_x'] = True 
             full_grid[r][size - 1 - c] = tr_cell 
             
-            # Cuadrante 3 (Abajo Izquierda)
             bl_cell = cell.copy()
             bl_cell['mirror_y'] = True
             full_grid[size - 1 - r][c] = bl_cell 
             
-            # Cuadrante 4 (Abajo Derecha)
             br_cell = cell.copy()
             br_cell['mirror_x'] = True
             br_cell['mirror_y'] = True
@@ -240,7 +266,6 @@ def generate_grid(size, user_colors, density):
     return full_grid
 
 def render_final(grid, size):
-    # Fondo de la figura también negro puro
     fig, ax = plt.subplots(figsize=(8, 8), facecolor='#000000')
     ax.set_aspect('equal')
     ax.axis('off')
@@ -251,21 +276,17 @@ def render_final(grid, size):
             x, y = c, size - 1 - r
             rot = cell['rot']
             
-            # Correccion matematica de rotacion al hacer espejo
             if cell.get('mirror_x'): rot = {0:1, 1:0, 2:3, 3:2}[rot]
             if cell.get('mirror_y'): rot = {0:3, 1:2, 2:1, 3:0}[rot]
 
             draw_bauhaus_tile(ax, x, y, cell['type'], rot, cell['c_main'], cell['c_acc'])
 
-    # Marco exterior grueso del mosaico (Doble línea blanca/negra para enmarcar)
     ax.plot([0, size, size, 0, 0], [0, 0, size, size, 0], color='#111111', linewidth=12, zorder=20)
-    
     plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
     plt.margins(0,0)
     return fig
 
-# --- EJECUCION Y CENTRADO DEL MOSAICO ---
-# (Necesitamos regenerar aqui con la semilla correcta)
+# --- EJECUCION ---
 random.seed(st.session_state.seed)
 grid_data = generate_grid(complejidad, colores_usuario, densidad)
 figura = render_final(grid_data, complejidad)
@@ -273,19 +294,15 @@ figura = render_final(grid_data, complejidad)
 col_vacia1, col_centro, col_vacia2 = st.columns([1, 2, 1])
 with col_centro:
     st.pyplot(figura, use_container_width=True)
-    st.markdown("<br>", unsafe_allow_html=True) # Espacio extra
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- BOTON NUEVO ABAJO A LA DERECHA DEL MOSAICO ---
-    # Creamos un grid de 2 columnas debajo de la imagen centrada
-    # y ponemos el boton en la derecha.
+    # --- BOTON NUEVO (DERECHA) ---
     col_bottom_left, col_bottom_right = st.columns([3, 1])
     with col_bottom_right:
         st.button("NUEVO", on_click=generar_nueva_semilla, use_container_width=True)
 
-# --- GESTION DE DESCARGAS (LOGICA EN SIDEBAR) ---
+# --- DESCARGAS (BARRA LATERAL) ---
 with st.sidebar:
-    # Generamos los datos reales de descarga una vez el mosaico esta listo
-    # Usamos buffers
     buf_png = BytesIO()
     figura.savefig(buf_png, format="png", bbox_inches='tight', pad_inches=0.05, dpi=300, facecolor="#ffffff")
     st.download_button(
@@ -303,3 +320,5 @@ with st.sidebar:
         file_name=f"modulo_{st.session_state.seed}.svg",
         mime="image/svg+xml"
     )
+
+```
