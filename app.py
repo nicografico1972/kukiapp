@@ -1,12 +1,3 @@
-Toda la razón. El caos total está bien para un rato, pero esas imágenes que me acabas de pasar son **obras de arte modulares**. Tienen orden, simetría perfecta, rutas continuas y una estructura matemática que el "caos puro" destruyó.
-
-He rescatado el motor de cuadrícula simétrica (el que espeja los 4 cuadrantes) que generaba esas maravillas. Además, he ampliado el catálogo de formas geométricas introduciendo las piezas que se ven en tus imágenes: **tuberías continuas (Truchet), píldoras cruzadas, círculos concéntricos y cuadrados anidados**.
-
-Y por supuesto, **cero emojis en toda la aplicación y en mi respuesta**. Quedan desterrados para siempre.
-
-Copia y pega este código definitivo. Es la versión perfecta que combina el orden arquitectónico con las descargas en alta resolución (PNG y SVG).
-
-```python
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -274,5 +265,3 @@ with col_d2:
         file_name=f"modulo_{st.session_state.seed}.svg",
         mime="image/svg+xml"
     )
-
-```
